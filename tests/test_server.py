@@ -126,6 +126,31 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertEqual(len(result["chart"]["pillars"]), 4)
         self.assertEqual(len(result["analysis"]["likes"]), 3)
 
+    def test_live_analysis_is_grounded_in_bazi_five_elements(self):
+        profile = {
+            "name": "王总",
+            "gender": "男",
+            "calendar_type": "solar",
+            "birth_date": "1985-06-18",
+            "birth_time": "09:30",
+            "time_precision": "exact",
+            "birth_place": "江苏省南京市",
+        }
+        transcript = [{"role": "opponent", "text": "今晚给我，别再解释了。"}]
+        with patch.dict(
+            "server.os.environ", {"DEEPSEEK_DISABLE_KEYCHAIN": "1"}, clear=True
+        ):
+            mystic = server.generate_mystic_profile(profile, transcript)
+            live = server.generate_live_analysis(profile, mystic["analysis"], transcript)
+
+        self.assertIn("四柱 乙丑 · 壬午 · 戊子 · 丁巳", live["bazi_basis"])
+        self.assertIn("日主 阳土（戊）", live["bazi_basis"])
+        self.assertTrue(live["signals"][0].startswith("日主锚点｜"))
+        self.assertTrue(live["signals"][1].startswith("五行流通｜"))
+        self.assertTrue(live["signals"][2].startswith("喜忌×聊天｜"))
+        self.assertTrue(all(len(signal) <= 140 for signal in live["signals"]))
+        self.assertIn("命理锚点", live["deepening"])
+
 
 class StreamingApiTests(unittest.TestCase):
     @classmethod
@@ -196,6 +221,20 @@ class StreamingApiTests(unittest.TestCase):
             )
         self.assertEqual(caught.exception.code, 404)
 
+    def test_roadshow_and_its_assets_are_public(self):
+        expected_types = {
+            "/roadshow.html": "text/html",
+            "/roadshow.css": "text/css",
+            "/roadshow.js": "javascript",
+            "/artifacts/workplace-demo-initial.png": "image/png",
+        }
+        for path, expected_type in expected_types.items():
+            with self.subTest(path=path), urllib.request.urlopen(
+                f"http://127.0.0.1:{self.port}{path}", timeout=3
+            ) as response:
+                self.assertEqual(response.status, 200)
+                self.assertIn(expected_type, response.headers.get_content_type())
+
     def test_mac_keychain_can_supply_api_key(self):
         completed = server.subprocess.CompletedProcess(
             args=["security"], returncode=0, stdout="keychain-test-value\n", stderr=""
@@ -232,6 +271,8 @@ class StreamingApiTests(unittest.TestCase):
         self.assertEqual(mystic["source"], "demo-fallback")
         self.assertEqual(live_status, 200)
         self.assertEqual(len(live["signals"]), 3)
+        self.assertIn("四柱", live["bazi_basis"])
+        self.assertTrue(all("｜" in signal for signal in live["signals"]))
 
 
 if __name__ == "__main__":

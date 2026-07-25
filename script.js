@@ -161,6 +161,7 @@ const strategyCopy = document.querySelector("#strategy-copy");
 const openMysticLabButton = document.querySelector("#open-mystic-lab");
 const mysticLab = document.querySelector("#mystic-lab");
 const mysticAmbience = document.querySelector("#mystic-ambience");
+const mysticConstellationGroups = [...document.querySelectorAll(".mystic-constellation-group")];
 const mysticEntry = document.querySelector("#mystic-entry");
 const entryBranches = document.querySelector("#entry-branches");
 const entryStems = document.querySelector("#entry-stems");
@@ -219,9 +220,16 @@ const liveTranscript = document.querySelector("#live-transcript");
 const liveChatForm = document.querySelector("#live-chat-form");
 const liveMessage = document.querySelector("#live-message");
 const liveAnalysisStatus = document.querySelector("#live-analysis-status");
+const liveBaziBasis = document.querySelector("#live-bazi-basis");
 const liveSignals = document.querySelector("#live-signals");
 const liveDeepening = document.querySelector("#live-deepening");
 const liveSuggestedLine = document.querySelector("#live-suggested-line");
+const bootScreen = document.querySelector("#boot-screen");
+const bootSkipButton = document.querySelector("#boot-skip");
+const bootStageIndex = document.querySelector("#boot-stage-index");
+const bootStageText = document.querySelector("#boot-stage-text");
+const bootProgressValue = document.querySelector("#boot-progress-value");
+const bootStepNodes = [...document.querySelectorAll("[data-boot-step]")];
 
 let activeScenario = "boss";
 let cheatEnabled = false;
@@ -244,9 +252,83 @@ let mysticEntryFinishTimer = 0;
 
 const MYSTIC_ENTRY_REVEAL_MS = 3550;
 const MYSTIC_ENTRY_FINISH_MS = 4550;
+const BOOT_SEQUENCE_MS = 7200;
+
+let bootFinished = false;
+let bootProgressFrame = 0;
+let bootTimers = [];
 
 const PATIENCE_STORAGE_KEY = "stf-daily-patience-v1";
 const INITIAL_PATIENCE_BALANCE = 68;
+
+function setBootStage(index, label) {
+  bootScreen.dataset.stage = String(index + 1);
+  bootStageIndex.textContent = `${String(index + 1).padStart(2, "0")} / 03`;
+  bootStageText.textContent = label;
+  bootStepNodes.forEach((step, stepIndex) => {
+    step.classList.toggle("is-active", stepIndex === index);
+    step.classList.toggle("is-complete", stepIndex < index);
+  });
+}
+
+function clearBootSequence() {
+  bootTimers.forEach((timer) => window.clearTimeout(timer));
+  bootTimers = [];
+  window.cancelAnimationFrame(bootProgressFrame);
+}
+
+function finishBootSequence({ immediate = false } = {}) {
+  if (bootFinished) return;
+  bootFinished = true;
+  clearBootSequence();
+  bootStepNodes.forEach((step) => {
+    step.classList.remove("is-active");
+    step.classList.add("is-complete");
+  });
+  bootStageIndex.textContent = "READY";
+  bootStageText.textContent = "状态在线，准备开局";
+  bootProgressValue.textContent = `${patienceState.balance}%`;
+  document.body.classList.remove("is-booting");
+  document.body.classList.add("is-booted");
+
+  if (immediate) {
+    bootScreen.hidden = true;
+    bootScreen.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  bootScreen.classList.add("is-exiting");
+  window.setTimeout(() => {
+    bootScreen.hidden = true;
+    bootScreen.setAttribute("aria-hidden", "true");
+  }, 820);
+}
+
+function startBootSequence() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    finishBootSequence({ immediate: true });
+    return;
+  }
+
+  const startedAt = performance.now();
+  const updateProgress = (now) => {
+    const ratio = Math.min(1, (now - startedAt) / (BOOT_SEQUENCE_MS - 250));
+    const easedRatio = 1 - ((1 - ratio) ** 3);
+    bootProgressValue.textContent = `${Math.round(patienceState.balance * easedRatio)}%`;
+    if (!bootFinished && ratio < 1) bootProgressFrame = window.requestAnimationFrame(updateProgress);
+  };
+  bootProgressFrame = window.requestAnimationFrame(updateProgress);
+
+  bootTimers.push(
+    window.setTimeout(() => setBootStage(1, "三大战场正在切换就位"), 2350),
+    window.setTimeout(() => setBootStage(2, "八字外挂已装载，默认关闭"), 4700),
+    window.setTimeout(() => {
+      bootStageIndex.textContent = "READY";
+      bootStageText.textContent = "状态在线，准备开局";
+    }, 6550),
+    window.setTimeout(() => finishBootSequence(), BOOT_SEQUENCE_MS),
+  );
+}
 
 function localDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -950,15 +1032,35 @@ function syncAnalysisObjectName() {
 }
 
 function updateMysticParallax(event) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   window.cancelAnimationFrame(mysticPointerFrame);
   mysticPointerFrame = window.requestAnimationFrame(() => {
     const rect = mysticLab.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
     const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
-    mysticLab.style.setProperty("--pointer-x", `${x.toFixed(1)}%`);
-    mysticLab.style.setProperty("--pointer-y", `${y.toFixed(1)}%`);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      mysticLab.style.setProperty("--pointer-x", `${x.toFixed(1)}%`);
+      mysticLab.style.setProperty("--pointer-y", `${y.toFixed(1)}%`);
+    }
+
+    let closestGroup = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    mysticConstellationGroups.forEach((group) => {
+      const deltaX = (x - Number(group.dataset.centerX)) / 18;
+      const deltaY = (y - Number(group.dataset.centerY)) / 21;
+      const distance = Math.hypot(deltaX, deltaY);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestGroup = group;
+      }
+    });
+    mysticConstellationGroups.forEach((group) => {
+      group.classList.toggle("is-lit", group === closestGroup && closestDistance < 1);
+    });
   });
+}
+
+function clearMysticConstellationHover() {
+  mysticConstellationGroups.forEach((group) => group.classList.remove("is-lit"));
 }
 
 function fillCurrentOpponent() {
@@ -1164,8 +1266,13 @@ function appendTableRow(label, values, className = "") {
   header.scope = "row";
   header.textContent = label;
   row.append(header);
-  values.forEach((value) => {
+  values.forEach((value, index) => {
     const cell = document.createElement("td");
+    if (index === 2) cell.classList.add("day-pillar-cell");
+    if (index === 2 && className.includes("pillar-row--stem")) {
+      cell.classList.add("day-master-cell");
+      cell.setAttribute("aria-label", `日主天干：${value}`);
+    }
     if (value instanceof Node) cell.append(value);
     else cell.textContent = value;
     row.append(cell);
@@ -1190,6 +1297,12 @@ function renderProfessionalChart(result) {
     const cell = document.createElement("th");
     cell.scope = index === 0 ? "col" : "col";
     cell.textContent = label;
+    if (index === 3) {
+      cell.classList.add("day-pillar-heading");
+      const coreLabel = document.createElement("small");
+      coreLabel.textContent = "日主所在";
+      cell.append(coreLabel);
+    }
     headRow.append(cell);
   });
   head.append(headRow);
@@ -1353,10 +1466,13 @@ async function generateMysticProfile(event) {
 }
 
 function renderLiveAnalysis(result) {
+  liveBaziBasis.textContent = result.bazi_basis || "当前命理依据暂未返回，请重新流转排盘。";
   renderList(liveSignals, result.signals);
   liveDeepening.textContent = `${result.deepening} 下一步：${result.next_move}`;
   liveSuggestedLine.textContent = result.suggested_line;
-  liveAnalysisStatus.textContent = result.source === "deepseek-v4" ? "DeepSeek V4-Pro 已根据聊天加深判断" : "本地演示引擎已根据聊天加深判断";
+  liveAnalysisStatus.textContent = result.source === "deepseek-v4"
+    ? "DeepSeek V4-Pro 已按日主、五行喜忌与当前聊天综合解读"
+    : "本地演示引擎已按四柱五行生成基础解读";
   setModelStatus(result.source === "deepseek-v4" || Boolean(result.warning), result.source);
   setMysticStep("live");
 }
@@ -1367,7 +1483,7 @@ async function runLiveAnalysis() {
   liveAnalysisInFlight = true;
   const conclusion = liveAnalysisStatus.closest(".live-conclusion");
   conclusion.classList.add("is-loading");
-  liveAnalysisStatus.textContent = "正在读取新增聊天信号……";
+  liveAnalysisStatus.textContent = "正在按日主、五行流通与喜忌复核聊天信号……";
   refreshLiveAnalysisButton.disabled = true;
   try {
     const result = await fetchJson("./api/live-analysis", {
@@ -1406,6 +1522,7 @@ sceneButtons.forEach((button) => {
   button.addEventListener("click", () => renderScenario(button.dataset.scenario));
 });
 
+bootSkipButton.addEventListener("click", () => finishBootSequence());
 cheatSwitch.addEventListener("click", toggleCheat);
 composer.addEventListener("submit", submitMessage);
 copyReply.addEventListener("click", copyCurrentReply);
@@ -1427,8 +1544,14 @@ mysticLab.addEventListener("pointermove", updateMysticParallax, { passive: true 
 mysticLab.addEventListener("pointerleave", () => {
   mysticLab.style.setProperty("--pointer-x", "72%");
   mysticLab.style.setProperty("--pointer-y", "34%");
+  clearMysticConstellationHover();
 });
 document.addEventListener("keydown", (event) => {
+  if (!bootScreen.hidden && ["Escape", "Enter", " "].includes(event.key)) {
+    event.preventDefault();
+    finishBootSequence();
+    return;
+  }
   if (event.key === "Escape" && !patienceLedger.hidden) {
     setPatienceLedgerOpen(false);
     patienceMeter.focus();
@@ -1456,3 +1579,4 @@ syncAnalysisObjectName();
 persistPatienceState();
 renderPatienceState();
 renderScenario(activeScenario);
+startBootSequence();

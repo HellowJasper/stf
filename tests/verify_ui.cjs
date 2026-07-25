@@ -23,6 +23,30 @@ function assert(condition, message) {
   try {
     await page.goto(target, { waitUntil: "networkidle" });
     assert((await page.title()).includes("工位开挂局"), "页面标题不正确");
+    assert(await page.locator("#boot-screen").isVisible(), "开始加载界面没有显示");
+    assert((await page.locator("#boot-stage-text").textContent()).includes("职场气压"), "开始加载界面首阶段文案不正确");
+    const bootStyleSignature = () => page.evaluate(() => {
+      const screen = document.querySelector("#boot-screen");
+      const scene = document.querySelector(".boot-workbench__scene");
+      return `${getComputedStyle(screen).backgroundColor}|${getComputedStyle(screen).backgroundImage}|${getComputedStyle(scene).backgroundColor}`;
+    });
+    const bootStageOneStyle = await bootStyleSignature();
+    const bootProgressSeconds = await page.locator(".boot-loader__track span").evaluate((node) => Number.parseFloat(getComputedStyle(node).animationDuration));
+    assert(bootProgressSeconds >= 6.5, "开始加载总时长没有延长到 7 秒附近");
+    await page.screenshot({ path: path.join(artifacts, "workplace-demo-boot.png"), fullPage: false });
+    await page.waitForFunction(() => document.querySelector("#boot-screen").dataset.stage === "2");
+    assert((await page.locator("#boot-stage-text").textContent()).includes("三大战场"), "开始加载界面没有进入第二阶段");
+    const bootStageTwoStyle = await bootStyleSignature();
+    assert(bootStageTwoStyle !== bootStageOneStyle, "第二阶段背景与第一阶段没有发生变化");
+    await page.screenshot({ path: path.join(artifacts, "workplace-demo-boot-stage-2.png"), fullPage: false });
+    await page.waitForFunction(() => document.querySelector("#boot-screen").dataset.stage === "3");
+    assert((await page.locator("#boot-stage-text").textContent()).includes("八字外挂"), "开始加载界面没有进入第三阶段");
+    const bootStageThreeStyle = await bootStyleSignature();
+    assert(bootStageThreeStyle !== bootStageTwoStyle, "第三阶段背景与第二阶段没有发生变化");
+    await page.screenshot({ path: path.join(artifacts, "workplace-demo-boot-stage-3.png"), fullPage: false });
+    await page.locator("#boot-skip").click();
+    await page.locator("#boot-screen").waitFor({ state: "hidden", timeout: 2000 });
+    assert(await page.locator("body").evaluate((node) => node.classList.contains("is-booted")), "开始加载界面退场后主页面没有解锁");
     assert((await page.locator(".scene-card").count()) === 3, "三种场景没有完整渲染");
     assert(await page.locator("#send-button").isVisible(), "主操作按钮首屏不可见");
     assert(await page.locator("#cheat-switch").isVisible(), "八字外挂开关首屏不可见");
@@ -165,6 +189,10 @@ function assert(condition, message) {
     assert((await page.locator("#chart-pillars .chart-pillar").count()) === 4, "四柱排盘摘要不完整");
     assert((await page.locator("#skill-pillar-table tbody tr").count()) === 5, "bazi-skill 专业排盘表不完整");
     assert((await page.locator("#skill-pillar-table .pillar-row--stem td").allTextContents()).join("") === "乙壬戊丁", "历法引擎没有输出预期的真实天干");
+    assert((await page.locator("#skill-pillar-table .day-master-cell").textContent()).includes("戊"), "日主天干没有被单独标记");
+    assert((await page.locator("#skill-pillar-table .day-pillar-heading small").textContent()).trim() === "日主所在", "日柱表头没有说明日主位置");
+    const dayMasterMotion = await page.locator("#skill-pillar-table .day-master-cell").evaluate((node) => getComputedStyle(node).animationName);
+    assert(dayMasterMotion.includes("day-master-focus"), "日主核心格没有呼吸高亮动效");
     assert((await page.locator("#element-balance .element-meter").count()) === 5, "五行分布没有完整渲染");
     assert((await page.locator("#dayun-track .dayun-cycle").count()) === 8, "八步大运没有完整渲染");
     assert((await page.locator("#skill-day-master").textContent()).includes("阳土"), "日主诊断没有渲染");
@@ -173,6 +201,12 @@ function assert(condition, message) {
     assert((await page.locator("[data-mystic-step]").count()) === 4, "玄学分析台应只保留四个分析步骤");
     assert((await page.locator("#mystic-lab [id*='rewind']").count()) === 0, "玄学分析台中仍残留回溯入口");
     await page.waitForFunction(() => document.querySelectorAll("#live-signals li").length === 3);
+    assert((await page.locator("#live-bazi-basis").textContent()).includes("四柱"), "实时解读没有展示四柱命理依据");
+    assert((await page.locator("#live-bazi-basis").textContent()).includes("日主"), "实时解读没有展示日主依据");
+    const liveSignalTexts = await page.locator("#live-signals li").allTextContents();
+    assert(liveSignalTexts[0].startsWith("日主锚点｜"), "第一条实时解读不是日主锚点");
+    assert(liveSignalTexts[1].startsWith("五行流通｜"), "第二条实时解读不是五行流通");
+    assert(liveSignalTexts[2].startsWith("喜忌×聊天｜"), "第三条实时解读没有关联喜忌与聊天");
     await page.screenshot({ path: path.join(artifacts, "mystic-lab-result.png") });
 
     await page.locator("#live-message").fill("这个进度你最好今天就给我一个明确答复。");
@@ -189,6 +223,9 @@ function assert(condition, message) {
       desktopFit,
       replyLength: reply.length,
       screenshots: [
+        "artifacts/workplace-demo-boot.png",
+        "artifacts/workplace-demo-boot-stage-2.png",
+        "artifacts/workplace-demo-boot-stage-3.png",
         "artifacts/workplace-demo-initial.png",
         "artifacts/workplace-demo-patience-ledger.png",
         "artifacts/workplace-demo-thinking.png",

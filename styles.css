@@ -45,6 +45,1081 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.is-booting {
+  overflow: hidden;
+}
+
+.boot-screen {
+  position: fixed;
+  z-index: 500;
+  inset: 0;
+  min-width: 1120px;
+  overflow: hidden;
+  color: #e8dfc8;
+  background: transparent;
+  font-family: "PingFang SC", "Hiragino Sans GB", sans-serif;
+  isolation: isolate;
+}
+
+.boot-screen[hidden] {
+  display: none;
+}
+
+.boot-screen::before {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 10% 18%, rgb(239 214 154 / 70%) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 23%, rgb(155 182 197 / 54%) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 34% 78%, rgb(239 214 154 / 48%) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 88% 72%, rgb(155 182 163 / 42%) 0 1px, transparent 1.5px),
+    repeating-linear-gradient(112deg, transparent 0 11px, rgb(255 255 255 / 2%) 12px, transparent 13px 24px);
+  background-size: 173px 149px, 211px 187px, 137px 169px, 251px 203px, 29px 31px;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  animation: boot-sky-arrive 1.2s 120ms ease-out both, boot-sky-drift 28s 1.2s linear infinite alternate;
+  transition: opacity 420ms ease;
+}
+
+.boot-screen::after {
+  position: absolute;
+  z-index: 5;
+  top: -20%;
+  bottom: -20%;
+  left: -12%;
+  width: 4%;
+  background: linear-gradient(90deg, transparent, rgb(239 214 154 / 22%), transparent);
+  content: "";
+  filter: blur(8px);
+  pointer-events: none;
+  transform: skewX(-14deg);
+  animation: boot-light-cut 1.35s 240ms cubic-bezier(0.18, 0.82, 0.2, 1) both;
+}
+
+.boot-screen__shutter {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: calc(50% + 1px);
+  background:
+    radial-gradient(circle at 50% 48%, rgb(199 166 106 / 10%), transparent 30%),
+    linear-gradient(120deg, rgb(12 17 13 / 98%), #030504 64%, #010201);
+  transition: transform 920ms cubic-bezier(0.72, 0, 0.18, 1);
+}
+
+.boot-screen__shutter::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(transparent, rgb(239 214 154 / 72%) 28% 72%, transparent);
+  box-shadow: 0 0 26px rgb(239 214 154 / 24%);
+  content: "";
+}
+
+.boot-screen__shutter--left {
+  left: 0;
+  border-right: 1px solid rgb(199 166 106 / 12%);
+}
+
+.boot-screen__shutter--left::after {
+  right: 0;
+}
+
+.boot-screen__shutter--right {
+  right: 0;
+  border-left: 1px solid rgb(199 166 106 / 12%);
+  transform: scaleX(-1);
+}
+
+.boot-screen__shutter--right::after {
+  left: 0;
+}
+
+.boot-screen__sky {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 52%, transparent 0 24%, rgb(199 166 106 / 6%) 24.3%, transparent 24.7%),
+    radial-gradient(ellipse at 50% 52%, transparent 0 39%, rgb(155 182 197 / 5%) 39.2%, transparent 39.6%),
+    linear-gradient(90deg, transparent 49.96%, rgb(199 166 106 / 12%) 50%, transparent 50.04%),
+    linear-gradient(transparent 49.96%, rgb(199 166 106 / 9%) 50%, transparent 50.04%);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.boot-screen__stage {
+  position: relative;
+  z-index: 8;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 17px;
+  width: min(720px, 60vw);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 42px 0 36px;
+  transition: opacity 420ms ease, filter 620ms ease, transform 780ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.boot-oracle {
+  position: relative;
+  width: clamp(250px, 28vh, 320px);
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: scale(0.82);
+  animation: boot-oracle-arrive 1.15s 240ms cubic-bezier(0.16, 0.76, 0.2, 1) both;
+}
+
+.boot-oracle__orbit,
+.boot-oracle__core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.boot-oracle__orbit {
+  aspect-ratio: 1;
+  border: 1px solid rgb(199 166 106 / 34%);
+  box-shadow: inset 0 0 35px rgb(199 166 106 / 4%);
+}
+
+.boot-oracle__orbit::before,
+.boot-oracle__orbit::after {
+  position: absolute;
+  border-radius: 50%;
+  content: "";
+}
+
+.boot-oracle__orbit::before {
+  inset: 9%;
+  border: 1px dashed rgb(239 214 154 / 26%);
+}
+
+.boot-oracle__orbit::after {
+  inset: 24%;
+  border: 1px double rgb(155 182 197 / 18%);
+}
+
+.boot-oracle__orbit--outer {
+  width: 100%;
+  animation: boot-orbit-spin 12s linear infinite;
+}
+
+.boot-oracle__orbit--middle {
+  width: 76%;
+  border-color: rgb(155 182 197 / 28%);
+  animation: boot-orbit-spin-reverse 9s linear infinite;
+}
+
+.boot-oracle__orbit--inner {
+  width: 52%;
+  border-color: rgb(216 92 71 / 28%);
+  animation: boot-orbit-spin 7s linear infinite;
+}
+
+.boot-oracle__glyph {
+  --glyph-angle: calc(var(--glyph-index) * 45deg);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px;
+  color: rgb(239 214 154 / 66%);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 14px;
+  line-height: 24px;
+  text-align: center;
+  text-shadow: 0 0 12px rgb(239 214 154 / 22%);
+  transform: rotate(var(--glyph-angle)) translateY(calc(clamp(250px, 28vh, 320px) * -0.45)) rotate(calc(var(--glyph-angle) * -1));
+  animation: boot-glyph-flicker 3.8s calc(var(--glyph-index) * -0.43s) ease-in-out infinite;
+}
+
+.boot-oracle__core {
+  display: grid;
+  width: 90px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid #d85c47;
+  color: #d85c47;
+  background: #030403;
+  box-shadow:
+    inset 0 0 24px rgb(216 92 71 / 8%),
+    0 0 34px rgb(216 92 71 / 18%),
+    0 0 76px rgb(199 166 106 / 8%);
+  animation: boot-core-pulse 2.4s 1.1s ease-in-out infinite;
+}
+
+.boot-oracle__core b {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 40px;
+  font-weight: 500;
+}
+
+.boot-oracle__core i {
+  position: absolute;
+  bottom: 14px;
+  color: rgb(239 214 154 / 44%);
+  font-size: 6px;
+  font-style: normal;
+  letter-spacing: 0.2em;
+}
+
+.boot-screen__copy {
+  display: grid;
+  justify-items: center;
+  opacity: 0;
+  text-align: center;
+  transform: translateY(14px);
+  animation: boot-copy-arrive 720ms 760ms ease-out both;
+}
+
+.boot-screen__copy > span {
+  color: rgb(199 166 106 / 54%);
+  font-size: 7px;
+  letter-spacing: 0.28em;
+}
+
+.boot-screen__copy h1 {
+  margin: 6px 0 0;
+  color: #e8dfc8;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: clamp(34px, 3.4vw, 52px);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-shadow: 0 0 28px rgb(239 214 154 / 15%);
+}
+
+.boot-screen__copy p {
+  margin: 6px 0 0;
+  color: rgb(232 223 200 / 46%);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.boot-loader {
+  width: min(520px, 48vw);
+  opacity: 0;
+  animation: boot-copy-arrive 650ms 1.05s ease-out both;
+}
+
+.boot-loader__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: rgb(232 223 200 / 58%);
+  font-size: 9px;
+}
+
+.boot-loader__status span {
+  color: #c7a66a;
+  font-family: monospace;
+  letter-spacing: 0.12em;
+}
+
+.boot-loader__status strong {
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.boot-loader__track {
+  height: 1px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgb(199 166 106 / 18%);
+}
+
+.boot-loader__track span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #c7a66a, #efd69a 58%, #d85c47);
+  box-shadow: 0 0 14px rgb(239 214 154 / 36%);
+  transform: translateX(-100%);
+  animation: boot-progress 3.45s 260ms cubic-bezier(0.2, 0.72, 0.2, 1) both;
+}
+
+.boot-loader__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 11px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boot-loader__steps li {
+  position: relative;
+  padding-left: 10px;
+  color: rgb(232 223 200 / 24%);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  transition: color 280ms ease;
+}
+
+.boot-loader__steps li::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+  transform: translateY(-50%);
+}
+
+.boot-loader__steps li.is-active {
+  color: #efd69a;
+  text-shadow: 0 0 10px rgb(239 214 154 / 25%);
+}
+
+.boot-loader__steps li.is-complete {
+  color: rgb(155 182 163 / 58%);
+}
+
+.boot-screen__coordinates,
+.boot-screen__edition,
+.boot-screen__skip {
+  position: absolute;
+  z-index: 9;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+}
+
+.boot-screen__coordinates {
+  bottom: 28px;
+  left: 34px;
+  display: grid;
+  gap: 4px;
+  color: rgb(155 182 197 / 34%);
+}
+
+.boot-screen__coordinates span:last-child {
+  margin-top: 5px;
+  color: rgb(199 166 106 / 42%);
+}
+
+.boot-screen__edition {
+  right: 34px;
+  bottom: 28px;
+  margin: 0;
+  color: rgb(199 166 106 / 34%);
+}
+
+.boot-screen__skip {
+  top: 28px;
+  right: 34px;
+  padding: 9px 12px;
+  border: 1px solid rgb(199 166 106 / 36%);
+  color: rgb(232 223 200 / 54%);
+  background: rgb(7 9 7 / 56%);
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.boot-screen__skip:hover,
+.boot-screen__skip:focus-visible {
+  border-color: #efd69a;
+  color: #030504;
+  background: #efd69a;
+  outline: none;
+}
+
+.boot-screen__skip span {
+  margin-left: 7px;
+  color: #d85c47;
+}
+
+.boot-screen.is-exiting {
+  pointer-events: none;
+}
+
+.boot-screen.is-exiting::before,
+.boot-screen.is-exiting::after,
+.boot-screen.is-exiting .boot-screen__sky,
+.boot-screen.is-exiting .boot-screen__coordinates,
+.boot-screen.is-exiting .boot-screen__edition,
+.boot-screen.is-exiting .boot-screen__skip {
+  opacity: 0;
+}
+
+.boot-screen.is-exiting .boot-screen__stage {
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(1.08);
+}
+
+.boot-screen.is-exiting .boot-screen__shutter--left {
+  transform: translateX(-102%);
+}
+
+.boot-screen.is-exiting .boot-screen__shutter--right {
+  transform: translateX(102%) scaleX(-1);
+}
+
+body.is-booted > .ticker,
+body.is-booted > .masthead,
+body.is-booted > .demo-layout,
+body.is-booted > .page-footer {
+  animation: boot-page-reveal 720ms cubic-bezier(0.16, 0.76, 0.2, 1) backwards;
+}
+
+body.is-booted > .masthead { animation-delay: 80ms; }
+body.is-booted > .demo-layout { animation-delay: 150ms; }
+body.is-booted > .page-footer { animation-delay: 220ms; }
+
+/* The opening belongs to the bright workplace world. The black-gold visual
+   language is reserved for the moment the user deliberately opens Bazi mode. */
+.boot-screen {
+  min-width: 1120px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle, rgb(255 77 46 / 15%) 0 2px, transparent 2.5px) 0 0 / 32px 32px,
+    var(--paper);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", sans-serif;
+  clip-path: inset(0);
+  transition: background-color 900ms ease, color 900ms ease;
+}
+
+.boot-screen::before {
+  z-index: 0;
+  inset: auto -7vw -34vh auto;
+  width: 54vw;
+  height: 54vw;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 0 34%, var(--yellow) 34.2% 35%, transparent 35.2% 47%, var(--ink) 47.2% 47.8%, transparent 48%),
+    transparent;
+  opacity: 0.12;
+  animation: boot-paper-orbit 18s linear infinite;
+  transition: inset 900ms var(--ease-snap), width 900ms var(--ease-snap), height 900ms var(--ease-snap), opacity 700ms ease, background 700ms ease;
+}
+
+.boot-screen::after {
+  z-index: 0;
+  top: -9vh;
+  right: auto;
+  bottom: auto;
+  left: -8vw;
+  width: 38vw;
+  height: 34vh;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  box-shadow: 12px 12px 0 var(--ink);
+  filter: none;
+  opacity: 1;
+  transform: rotate(-9deg);
+  animation: boot-yellow-card-in 620ms var(--ease-snap) both;
+}
+
+.boot-screen__shutter {
+  z-index: 1;
+  width: 12vw;
+  height: 32vh;
+  border: 3px solid var(--ink);
+  background: var(--blue);
+  box-shadow: 10px 10px 0 var(--ink);
+  transition: top 900ms var(--ease-snap), right 900ms var(--ease-snap), bottom 900ms var(--ease-snap), left 900ms var(--ease-snap), width 900ms var(--ease-snap), height 900ms var(--ease-snap), background 650ms ease, transform 900ms var(--ease-snap);
+}
+
+.boot-screen__shutter::after {
+  display: none;
+}
+
+.boot-screen__shutter--left {
+  top: auto;
+  bottom: -17vh;
+  left: -3vw;
+  transform: rotate(12deg);
+}
+
+.boot-screen__shutter--right {
+  top: 25vh;
+  right: -7vw;
+  bottom: auto;
+  height: 44vh;
+  background: var(--red);
+  transform: rotate(-7deg);
+}
+
+.boot-screen__sky {
+  z-index: 1;
+  inset: 0;
+  display: block;
+  background: none;
+  opacity: 1;
+}
+
+.boot-screen__sky span {
+  position: absolute;
+  display: grid;
+  width: 48px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 5px 5px 0 var(--ink);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 26px;
+  font-weight: 900;
+  animation: boot-sticker-bob 2.4s ease-in-out infinite;
+  transition: top 850ms var(--ease-snap), right 850ms var(--ease-snap), bottom 850ms var(--ease-snap), left 850ms var(--ease-snap), color 500ms ease, background 500ms ease, box-shadow 500ms ease;
+}
+
+.boot-screen__sky span:nth-child(1) { top: 17%; left: 8%; transform: rotate(-8deg); }
+.boot-screen__sky span:nth-child(2) { top: 67%; left: 14%; color: var(--white); background: var(--red); animation-delay: -0.7s; transform: rotate(7deg); }
+.boot-screen__sky span:nth-child(3) { top: 14%; right: 13%; color: var(--white); background: var(--blue); animation-delay: -1.2s; transform: rotate(8deg); }
+.boot-screen__sky span:nth-child(4) { right: 7%; bottom: 15%; background: var(--pink); animation-delay: -1.7s; transform: rotate(-6deg); }
+
+.boot-screen__stage {
+  z-index: 5;
+  align-content: center;
+  justify-items: stretch;
+  gap: 24px;
+  width: min(1160px, calc(100vw - 180px));
+  padding: 76px 0 68px;
+  transform: none;
+  animation: boot-stage-in 720ms 90ms var(--ease-snap) both;
+}
+
+.boot-screen__copy {
+  display: flex;
+  align-items: center;
+  justify-items: initial;
+  gap: 22px;
+  opacity: 1;
+  text-align: left;
+  transform: none;
+  animation: none;
+}
+
+.boot-screen__stamp {
+  display: grid;
+  width: 92px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 4px solid var(--ink);
+  color: var(--white) !important;
+  background: var(--red);
+  box-shadow: 8px 8px 0 var(--ink);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 58px !important;
+  font-weight: 900;
+  letter-spacing: 0 !important;
+  transform: rotate(-5deg);
+  transition: color 550ms ease, background 550ms ease, transform 850ms var(--ease-snap), box-shadow 550ms ease;
+}
+
+.boot-screen__copy > div > span {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  background: var(--yellow);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  transform: rotate(-1deg);
+  transition: color 500ms ease, background 500ms ease, transform 750ms var(--ease-snap);
+}
+
+.boot-screen__copy h1 {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: clamp(56px, 6vw, 86px);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.07em;
+  text-shadow: none;
+}
+
+.boot-screen__copy p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.boot-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.8fr);
+  gap: 22px;
+}
+
+.boot-workbench__scene,
+.boot-workbench__buff {
+  position: relative;
+  min-height: 190px;
+  border: 3px solid var(--ink);
+  box-shadow: 9px 9px 0 var(--ink);
+  transition: color 650ms ease, background 650ms ease, box-shadow 650ms ease, filter 650ms ease, opacity 650ms ease, transform 800ms var(--ease-snap);
+}
+
+.boot-workbench__scene {
+  overflow: hidden;
+  padding: 25px 30px;
+  color: var(--white);
+  background: var(--blue);
+}
+
+.boot-workbench__scene::before {
+  position: absolute;
+  top: -48px;
+  right: 126px;
+  content: "01";
+  color: rgb(255 255 255 / 13%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 174px;
+  font-weight: 950;
+  line-height: 1;
+  pointer-events: none;
+  transition: color 500ms ease, right 850ms var(--ease-snap), transform 850ms var(--ease-snap);
+}
+
+.boot-workbench__scene::after {
+  position: absolute;
+  right: -40px;
+  bottom: -65px;
+  width: 210px;
+  aspect-ratio: 1;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--yellow);
+  content: "加载中";
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 950;
+  line-height: 150px;
+  text-align: center;
+  transform: rotate(-14deg);
+  transition: color 500ms ease, background 500ms ease, transform 850ms var(--ease-snap);
+}
+
+.boot-workbench__number {
+  display: inline-block;
+  min-width: 70px;
+  padding: 4px 7px;
+  border: 2px solid var(--white);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.boot-workbench__scene p {
+  margin: 17px 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.boot-workbench__scene > strong {
+  display: block;
+  max-width: calc(100% - 150px);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: clamp(27px, 2.5vw, 38px);
+  line-height: 1.15;
+}
+
+.boot-workbench__chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 19px;
+}
+
+.boot-workbench__chips span {
+  padding: 5px 8px;
+  border: 2px solid var(--white);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.boot-workbench__buff {
+  padding: 24px 24px 20px;
+  color: var(--white);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 14px, rgb(255 255 255 / 5%) 14px 16px),
+    var(--ink);
+  transform: rotate(1deg);
+}
+
+.boot-workbench__buff > span {
+  color: var(--yellow);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.boot-workbench__buff > strong {
+  display: block;
+  margin-top: 12px;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 32px;
+}
+
+.boot-workbench__buff > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 17px;
+}
+
+.boot-workbench__buff i {
+  padding: 10px 2px;
+  border: 2px solid var(--yellow);
+  color: var(--white);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 18px;
+  font-style: normal;
+  text-align: center;
+}
+
+.boot-workbench__buff small {
+  display: block;
+  margin-top: 12px;
+  color: #aaa;
+  font-size: 10px;
+}
+
+.boot-workbench__buff i {
+  transition: color 450ms ease, border-color 450ms ease, background 450ms ease, transform 650ms var(--ease-snap);
+}
+
+.boot-loader {
+  width: 100%;
+  padding: 18px 20px 16px;
+  border: 3px solid var(--ink);
+  background: var(--white);
+  box-shadow: 7px 7px 0 var(--ink);
+  opacity: 1;
+  animation: none;
+}
+
+.boot-loader__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 13px;
+}
+
+.boot-loader__label strong {
+  font-weight: 900;
+}
+
+.boot-loader__label span {
+  color: var(--red);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.boot-loader__track {
+  height: 16px;
+  margin-top: 10px;
+  border: 3px solid var(--ink);
+  background: #ded9c9;
+}
+
+.boot-loader__track span {
+  width: 100%;
+  background: repeating-linear-gradient(135deg, var(--yellow) 0 14px, var(--red) 14px 28px);
+  box-shadow: none;
+  transform: translateX(-100%);
+  animation: boot-progress 6.75s 180ms cubic-bezier(0.2, 0.72, 0.2, 1) both;
+}
+
+.boot-loader__steps {
+  gap: 12px;
+  margin-top: 13px;
+}
+
+.boot-loader__steps li {
+  padding: 7px 10px;
+  border: 2px solid #c8c2b4;
+  color: #aaa49a;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.boot-loader__steps li::before {
+  display: none;
+}
+
+.boot-loader__steps li b {
+  margin-right: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.boot-loader__steps li.is-active {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 var(--ink);
+  text-shadow: none;
+}
+
+.boot-loader__steps li.is-complete {
+  border-color: var(--ink);
+  color: var(--white);
+  background: var(--blue);
+}
+
+.boot-screen__coordinates,
+.boot-screen__edition,
+.boot-screen__skip {
+  z-index: 8;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.boot-screen__coordinates {
+  top: 25px;
+  bottom: auto;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.boot-screen__coordinates span {
+  padding: 5px 8px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+}
+
+.boot-screen__coordinates span:last-child {
+  margin: 0;
+  color: var(--white);
+  background: var(--ink);
+}
+
+.boot-screen__edition {
+  right: auto;
+  bottom: 24px;
+  left: 30px;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.boot-screen__skip {
+  top: 24px;
+  right: 30px;
+  padding: 10px 14px;
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  background: var(--white);
+  box-shadow: 5px 5px 0 var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.boot-screen__skip:hover,
+.boot-screen__skip:focus-visible {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 2px 2px 0 var(--ink);
+  outline: none;
+  transform: translate(3px, 3px);
+}
+
+.boot-screen__skip span {
+  margin-left: 7px;
+  color: var(--red);
+  font-size: 18px;
+}
+
+.boot-screen__sticker {
+  position: absolute;
+  z-index: 7;
+  right: 6.7vw;
+  bottom: 8vh;
+  display: grid;
+  width: 82px;
+  aspect-ratio: 1;
+  margin: 0;
+  place-items: center;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--pink);
+  box-shadow: 6px 6px 0 var(--ink);
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1.05;
+  text-align: center;
+  transform: rotate(9deg);
+  animation: boot-sticker-pop 520ms 660ms var(--ease-snap) both;
+}
+
+/* Stage 02: the office battlefield moves into focus. The canvas cools down,
+   the red pressure card replaces the calm blue panel, and every loose sticker
+   changes position so the whole frame—not only the text—visibly advances. */
+.boot-screen[data-stage="2"] {
+  background:
+    radial-gradient(circle, rgb(34 81 255 / 14%) 0 2px, transparent 2.5px) 0 0 / 28px 28px,
+    linear-gradient(116deg, transparent 0 69%, rgb(34 81 255 / 10%) 69.2% 100%),
+    #e9edff;
+}
+
+.boot-screen[data-stage="2"]::before {
+  inset: -31vh auto auto -10vw;
+  width: 58vw;
+  height: 58vw;
+  background:
+    radial-gradient(circle, transparent 0 29%, var(--red) 29.2% 30%, transparent 30.2% 45%, var(--blue) 45.2% 45.8%, transparent 46%),
+    transparent;
+  opacity: 0.2;
+}
+
+.boot-screen[data-stage="2"]::after {
+  animation: boot-backdrop-stage-two 900ms var(--ease-snap) both;
+}
+
+.boot-screen[data-stage="2"] .boot-screen__shutter--left {
+  bottom: -11vh;
+  left: 25vw;
+  width: 17vw;
+  height: 25vh;
+  background: var(--red);
+  transform: rotate(-8deg);
+}
+
+.boot-screen[data-stage="2"] .boot-screen__shutter--right {
+  top: 55vh;
+  right: -2vw;
+  width: 18vw;
+  height: 28vh;
+  background: var(--yellow);
+  transform: rotate(8deg);
+}
+
+.boot-screen[data-stage="2"] .boot-screen__sky span:nth-child(1) { top: 70%; left: 7%; color: var(--white); background: var(--red); }
+.boot-screen[data-stage="2"] .boot-screen__sky span:nth-child(2) { top: 14%; left: 18%; color: var(--ink); background: var(--yellow); }
+.boot-screen[data-stage="2"] .boot-screen__sky span:nth-child(3) { top: 72%; right: 12%; color: var(--ink); background: var(--pink); }
+.boot-screen[data-stage="2"] .boot-screen__sky span:nth-child(4) { right: 7%; bottom: 72%; color: var(--white); background: var(--blue); }
+.boot-screen[data-stage="2"] .boot-screen__stamp { color: var(--white) !important; background: var(--blue); transform: rotate(4deg); }
+.boot-screen[data-stage="2"] .boot-screen__copy > div > span { background: var(--pink); transform: rotate(1deg); }
+.boot-screen[data-stage="2"] .boot-workbench { animation: boot-workbench-stage-two 720ms var(--ease-snap) both; }
+.boot-screen[data-stage="2"] .boot-workbench__scene { background: var(--red); transform: rotate(-0.5deg); }
+.boot-screen[data-stage="2"] .boot-workbench__scene::before { right: 86px; content: "02"; transform: rotate(-5deg); }
+.boot-screen[data-stage="2"] .boot-workbench__scene::after { content: "战场切换"; background: var(--pink); transform: rotate(9deg) scale(1.06); }
+.boot-screen[data-stage="2"] .boot-workbench__chips span:nth-child(1) { color: var(--ink); background: var(--yellow); }
+.boot-screen[data-stage="2"] .boot-workbench__chips span:nth-child(2) { color: var(--ink); background: var(--white); }
+.boot-screen[data-stage="2"] .boot-workbench__chips span:nth-child(3) { color: var(--ink); background: var(--pink); }
+.boot-screen[data-stage="2"] .boot-workbench__buff { opacity: 0.72; filter: grayscale(0.7); transform: rotate(2deg) scale(0.97); }
+.boot-screen[data-stage="2"] .boot-loader__steps li.is-active { color: var(--white); background: var(--red); }
+.boot-screen[data-stage="2"] .boot-screen__coordinates span:first-child { color: var(--white); background: var(--red); }
+.boot-screen[data-stage="2"] .boot-screen__sticker { background: var(--yellow); }
+
+/* Stage 03: warm warning-yellow floods the paper while the black Bazi card
+   becomes the visual anchor. It foreshadows the dark mystic screen without
+   abandoning the main page's comic border and primary-colour grammar. */
+.boot-screen[data-stage="3"] {
+  background:
+    radial-gradient(circle, rgb(19 19 19 / 11%) 0 1.5px, transparent 2px) 0 0 / 25px 25px,
+    repeating-linear-gradient(122deg, transparent 0 34px, rgb(255 255 255 / 19%) 34px 68px),
+    #fff2a6;
+}
+
+.boot-screen[data-stage="3"]::before {
+  inset: auto auto -44vh 20vw;
+  width: 64vw;
+  height: 64vw;
+  background:
+    radial-gradient(circle, transparent 0 27%, var(--ink) 27.2% 28%, transparent 28.2% 39%, var(--red) 39.2% 40%, transparent 40.2% 50%, var(--ink) 50.2% 50.7%, transparent 51%),
+    transparent;
+  opacity: 0.18;
+}
+
+.boot-screen[data-stage="3"]::after {
+  animation: boot-backdrop-stage-three 900ms var(--ease-snap) both;
+}
+
+.boot-screen[data-stage="3"] .boot-screen__shutter--left {
+  bottom: 58vh;
+  left: -3vw;
+  width: 23vw;
+  height: 24vh;
+  background: var(--blue);
+  transform: rotate(7deg);
+}
+
+.boot-screen[data-stage="3"] .boot-screen__shutter--right {
+  top: 66vh;
+  right: 8vw;
+  width: 20vw;
+  height: 25vh;
+  background: var(--red);
+  transform: rotate(-10deg);
+}
+
+.boot-screen[data-stage="3"] .boot-screen__sky span:nth-child(1) { top: 13%; left: 12%; color: var(--white); background: var(--ink); }
+.boot-screen[data-stage="3"] .boot-screen__sky span:nth-child(2) { top: 72%; left: 8%; color: var(--white); background: var(--blue); }
+.boot-screen[data-stage="3"] .boot-screen__sky span:nth-child(3) { top: 10%; right: 17%; color: var(--ink); background: var(--pink); }
+.boot-screen[data-stage="3"] .boot-screen__sky span:nth-child(4) { right: 8%; bottom: 13%; color: var(--white); background: var(--red); }
+.boot-screen[data-stage="3"] .boot-screen__stamp { color: var(--yellow) !important; background: var(--ink); transform: rotate(-2deg) scale(1.04); }
+.boot-screen[data-stage="3"] .boot-screen__copy > div > span { color: var(--yellow); background: var(--ink); transform: rotate(-1deg); }
+.boot-screen[data-stage="3"] .boot-workbench { animation: boot-workbench-stage-three 760ms var(--ease-snap) both; }
+.boot-screen[data-stage="3"] .boot-workbench__scene { background: var(--ink); transform: rotate(0.45deg) scale(0.98); }
+.boot-screen[data-stage="3"] .boot-workbench__scene::before { right: 106px; content: "03"; color: rgb(255 230 0 / 14%); transform: rotate(4deg); }
+.boot-screen[data-stage="3"] .boot-workbench__scene::after { content: "外挂待命"; color: var(--white); background: var(--red); transform: rotate(-6deg) scale(0.96); }
+.boot-screen[data-stage="3"] .boot-workbench__buff { opacity: 1; filter: none; box-shadow: 11px 11px 0 var(--blue), 17px 17px 0 var(--ink); transform: rotate(-1deg) scale(1.035); }
+.boot-screen[data-stage="3"] .boot-workbench__buff i { color: var(--ink); background: var(--yellow); transform: translateY(-3px); }
+.boot-screen[data-stage="3"] .boot-loader { background: var(--paper); }
+.boot-screen[data-stage="3"] .boot-loader__steps li.is-active { color: var(--yellow); background: var(--ink); }
+.boot-screen[data-stage="3"] .boot-loader__steps li.is-complete { color: var(--white); background: var(--red); }
+.boot-screen[data-stage="3"] .boot-screen__coordinates span:first-child { color: var(--yellow); background: var(--ink); }
+.boot-screen[data-stage="3"] .boot-screen__sticker { color: var(--white); background: var(--blue); }
+
+.boot-screen.is-exiting {
+  pointer-events: none;
+  animation: boot-screen-wipe 760ms cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+
+.boot-screen.is-exiting::before,
+.boot-screen.is-exiting::after,
+.boot-screen.is-exiting .boot-screen__sky,
+.boot-screen.is-exiting .boot-screen__coordinates,
+.boot-screen.is-exiting .boot-screen__edition,
+.boot-screen.is-exiting .boot-screen__skip {
+  opacity: 1;
+}
+
+.boot-screen.is-exiting .boot-screen__stage {
+  opacity: 1;
+  filter: none;
+  transform: translateY(-18px);
+}
+
+.boot-screen.is-exiting .boot-screen__shutter--left {
+  transform: rotate(12deg);
+}
+
+.boot-screen.is-exiting .boot-screen__shutter--right {
+  transform: rotate(-7deg);
+}
+
 button,
 textarea {
   font: inherit;
@@ -1840,6 +2915,87 @@ body.mystic-is-open {
   animation: mystic-galaxy-breathe 16s ease-in-out infinite alternate;
 }
 
+.mystic-sky-map {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.mystic-constellation-group {
+  opacity: 0.14;
+  filter: drop-shadow(0 0 3px rgb(155 182 197 / 14%));
+  transition: opacity 420ms ease, filter 520ms ease;
+}
+
+.mystic-constellation-group:nth-of-type(2) {
+  opacity: 0.11;
+}
+
+.mystic-constellation-group:nth-of-type(3) {
+  opacity: 0.13;
+}
+
+.constellation-halo {
+  fill: url("#constellation-halo");
+  opacity: 0;
+  transition: opacity 620ms ease;
+}
+
+.constellation-link {
+  fill: none;
+  stroke: rgb(155 182 197 / 46%);
+  stroke-width: 0.9;
+  stroke-dasharray: 3 8;
+  vector-effect: non-scaling-stroke;
+  animation: mystic-constellation-line 7s ease-in-out infinite;
+}
+
+.constellation-link--echo {
+  stroke: rgb(199 166 106 / 38%);
+  animation-delay: -2.4s;
+}
+
+.constellation-node {
+  fill: #afc4cf;
+  filter: drop-shadow(0 0 4px rgb(155 182 197 / 62%));
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mystic-constellation-node 4.8s ease-in-out infinite;
+}
+
+.constellation-node--major {
+  fill: #efd69a;
+  filter:
+    drop-shadow(0 0 5px rgb(239 214 154 / 78%))
+    drop-shadow(0 0 12px rgb(199 166 106 / 34%));
+  animation-delay: -1.7s;
+}
+
+.mystic-constellation-group.is-lit {
+  opacity: 0.86;
+  filter:
+    drop-shadow(0 0 8px rgb(155 182 197 / 48%))
+    drop-shadow(0 0 18px rgb(199 166 106 / 28%));
+}
+
+.mystic-constellation-group.is-lit .constellation-halo {
+  opacity: 0.92;
+}
+
+.mystic-constellation-group.is-lit .constellation-link {
+  stroke: rgb(239 214 154 / 76%);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 5;
+}
+
+.mystic-constellation-group.is-lit .constellation-node {
+  animation: mystic-constellation-node-lit 1.7s ease-in-out infinite;
+}
+
 .mystic-particle {
   position: absolute;
   top: var(--particle-y);
@@ -3116,6 +4272,21 @@ body.mystic-is-open {
   letter-spacing: 0.12em;
 }
 
+.skill-pillar-table .day-pillar-heading {
+  position: relative;
+  color: var(--mystic-red);
+  background:
+    linear-gradient(180deg, rgb(216 92 71 / 12%), rgb(7 9 7 / 48%));
+}
+
+.skill-pillar-table .day-pillar-heading small {
+  display: block;
+  margin-top: 3px;
+  color: rgb(239 214 154 / 54%);
+  font-size: 6px;
+  letter-spacing: 0.16em;
+}
+
 .skill-pillar-table thead th:first-child,
 .skill-pillar-table tbody th {
   width: 72px;
@@ -3124,6 +4295,16 @@ body.mystic-is-open {
 .skill-pillar-table td {
   color: rgb(232 223 200 / 74%);
   font-size: 10px;
+}
+
+.skill-pillar-table .day-pillar-cell {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgb(216 92 71 / 5%), transparent 74%),
+    rgb(7 9 7 / 16%);
+  box-shadow:
+    inset 1px 0 rgb(216 92 71 / 12%),
+    inset -1px 0 rgb(216 92 71 / 12%);
 }
 
 .skill-pillar-table .pillar-row td {
@@ -3136,6 +4317,45 @@ body.mystic-is-open {
 
 .skill-pillar-table .pillar-row--branch td {
   color: var(--mystic-gold-bright);
+}
+
+.skill-pillar-table .day-master-cell {
+  z-index: 2;
+  height: 64px;
+  color: #fff0cf;
+  background:
+    radial-gradient(circle at 50% 54%, rgb(216 92 71 / 24%), transparent 52%),
+    linear-gradient(135deg, rgb(199 166 106 / 9%), rgb(216 92 71 / 7%));
+  box-shadow:
+    inset 0 0 0 1px rgb(216 92 71 / 86%),
+    inset 0 0 28px rgb(216 92 71 / 10%),
+    0 0 22px rgb(216 92 71 / 18%);
+  font-size: 36px;
+  text-shadow:
+    0 0 10px rgb(239 214 154 / 30%),
+    0 0 24px rgb(216 92 71 / 24%);
+  animation: day-master-focus 3.2s ease-in-out infinite;
+}
+
+.skill-pillar-table .day-master-cell::before {
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgb(239 214 154 / 16%);
+  content: "";
+  pointer-events: none;
+}
+
+.skill-pillar-table .day-master-cell::after {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  color: var(--mystic-red);
+  content: "日主核心";
+  font-family: sans-serif;
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-shadow: none;
 }
 
 .hidden-stem-stack {
@@ -3606,6 +4826,17 @@ body.mystic-is-open {
   animation: mood-pulse 0.8s ease-in-out infinite;
 }
 
+.live-bazi-basis {
+  margin: 11px 0 0;
+  padding: 9px 11px;
+  border-left: 2px solid rgb(199 166 106 / 58%);
+  color: rgb(239 214 154 / 72%);
+  background: linear-gradient(90deg, rgb(199 166 106 / 8%), transparent 76%);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 10px;
+  line-height: 1.65;
+}
+
 .live-conclusion ul {
   display: flex;
   flex-wrap: wrap;
@@ -3622,7 +4853,7 @@ body.mystic-is-open {
   font-size: 9px;
 }
 
-.live-conclusion > p {
+.live-conclusion > p:not(.live-bazi-basis) {
   margin: 11px 0 0;
   color: rgb(232 223 200 / 58%);
   font-size: 10px;
@@ -3635,6 +4866,97 @@ body.mystic-is-open {
   font-size: 9px;
   line-height: 1.7;
   text-align: center;
+}
+
+@keyframes boot-paper-orbit {
+  to { rotate: 360deg; }
+}
+
+@keyframes boot-yellow-card-in {
+  from { opacity: 0; transform: translate(-90px, -50px) rotate(-16deg); }
+  to { opacity: 1; transform: translate(0, 0) rotate(-9deg); }
+}
+
+@keyframes boot-stage-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes boot-sticker-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -7px; }
+}
+
+@keyframes boot-sticker-pop {
+  from { opacity: 0; transform: rotate(18deg) scale(0.45); }
+  to { opacity: 1; transform: rotate(9deg) scale(1); }
+}
+
+@keyframes boot-backdrop-stage-two {
+  from {
+    top: -9vh;
+    left: -8vw;
+    width: 38vw;
+    height: 34vh;
+    background: var(--yellow);
+    transform: rotate(-9deg);
+  }
+  to {
+    top: 61vh;
+    left: -10vw;
+    width: 43vw;
+    height: 27vh;
+    background: var(--red);
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes boot-backdrop-stage-three {
+  from {
+    top: 61vh;
+    left: -10vw;
+    width: 43vw;
+    height: 27vh;
+    background: var(--red);
+    transform: rotate(7deg);
+  }
+  to {
+    top: -12vh;
+    left: 62vw;
+    width: 34vw;
+    height: 29vh;
+    background: var(--blue);
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes boot-workbench-stage-two {
+  from { opacity: 0.45; filter: saturate(1.8); transform: translateX(-28px) skewX(-2deg); }
+  58% { opacity: 1; filter: saturate(1.35); transform: translateX(8px) skewX(1deg); }
+  to { opacity: 1; filter: none; transform: translateX(0) skewX(0); }
+}
+
+@keyframes boot-workbench-stage-three {
+  from { opacity: 0.45; filter: contrast(1.45); transform: scale(0.96) rotate(1deg); }
+  62% { opacity: 1; filter: contrast(1.1); transform: scale(1.015) rotate(-0.5deg); }
+  to { opacity: 1; filter: none; transform: scale(1) rotate(0); }
+}
+
+@keyframes boot-progress {
+  0% { transform: translateX(-100%); }
+  32% { transform: translateX(-74%); }
+  65% { transform: translateX(-36%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes boot-screen-wipe {
+  0% { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(0 0 100% 0); }
+}
+
+@keyframes boot-page-reveal {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes ticker-slide {
@@ -3823,6 +5145,21 @@ body.mystic-is-open {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes day-master-focus {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 1px rgb(216 92 71 / 68%),
+      inset 0 0 22px rgb(216 92 71 / 8%),
+      0 0 14px rgb(216 92 71 / 10%);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgb(239 214 154 / 82%),
+      inset 0 0 34px rgb(216 92 71 / 18%),
+      0 0 32px rgb(216 92 71 / 30%);
+  }
+}
+
 @keyframes results-reveal {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
@@ -3844,6 +5181,23 @@ body.mystic-is-open {
 @keyframes mystic-galaxy-breathe {
   from { opacity: 0.42; transform: rotate(11deg) translate3d(-1.5%, -1%, 0) scale(0.98); }
   to { opacity: 0.82; transform: rotate(11deg) translate3d(1.5%, 1%, 0) scale(1.05); }
+}
+
+@keyframes mystic-constellation-line {
+  0%, 100% { stroke-opacity: 0.24; stroke-dashoffset: 0; }
+  48% { stroke-opacity: 0.62; }
+  100% { stroke-dashoffset: -22; }
+}
+
+@keyframes mystic-constellation-node {
+  0%, 100% { opacity: 0.34; transform: scale(0.76); }
+  46% { opacity: 0.82; transform: scale(1); }
+  64% { opacity: 0.5; transform: scale(0.86); }
+}
+
+@keyframes mystic-constellation-node-lit {
+  0%, 100% { opacity: 0.68; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.28); }
 }
 
 @keyframes mystic-particle-float {

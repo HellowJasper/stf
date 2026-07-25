@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="工位开挂局——5 分钟 HTML 产品路演。把职场后悔，变成一场可以重来的沟通演练。"
+    />
+    <meta name="theme-color" content="#ffe600" />
+    <title>工位开挂局｜5 分钟产品路演</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23ffe600'/%3E%3Cpath d='M11 12h42v40H11z' fill='%23131313'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='27' font-family='serif' font-weight='900' fill='%23ffe600'%3E爽%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./roadshow.css" />
+  </head>
+  <body>
+    <div class="pitch-deck" id="pitch-deck">
+      <header class="pitch-chrome">
+        <a class="pitch-brand" href="./" aria-label="返回工位开挂局 Demo">
+          <b>爽</b>
+          <span>工位开挂局<small>5 MIN PITCH</small></span>
+        </a>
+
+        <div class="pitch-timeline" aria-label="路演进度">
+          <div class="pitch-timeline__labels" aria-hidden="true">
+            <span>痛点</span><span>产品</span><span>演示</span><span>外挂</span><span>价值</span><span>技术</span><span>结尾</span>
+          </div>
+          <div class="pitch-timeline__track"><span id="pitch-progress"></span></div>
+        </div>
+
+        <div class="pitch-clock" id="pitch-clock" aria-label="路演剩余时间">
+          <span>剩余时间</span>
+          <strong id="pitch-time">05:00</strong>
+        </div>
+      </header>
+
+      <main class="pitch-stage" id="pitch-stage">
+        <section class="pitch-slide pitch-slide--cover is-active" data-slide data-duration="25" aria-labelledby="slide-1-title">
+          <div class="cover-scribble" aria-hidden="true">忍住 × 99</div>
+          <div class="cover-copy">
+            <span class="eyebrow reveal">职场对话拆招 DEMO · 5 分钟路演</span>
+            <h1 id="slide-1-title" class="reveal">这句话，<br />我怎么<span>下班后</span><br />才想明白？</h1>
+            <p class="reveal">把职场后悔，变成一场可以重来的沟通演练。</p>
+          </div>
+          <div class="cover-stamp reveal" aria-hidden="true"><b>爽</b><span>不憋屈，也不把工作聊崩</span></div>
+          <div class="cover-incoming reveal" aria-hidden="true">
+            <span>18:26 · 王总</span>
+            <strong>“这点小事为什么还没做完？今晚给我。”</strong>
+            <i>正在施压</i>
+          </div>
+          <p class="slide-source">产品主张｜来自当前“工位开挂局”Demo</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:25</b>
+            <p>大家有没有过这种时刻：白天被一句话噎住，晚上洗澡时突然想出完美回答？我们做的，就是让这句回答不用等到下班后才出现。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--pain" data-slide data-duration="30" aria-labelledby="slide-2-title" hidden>
+          <header class="slide-heading reveal">
+            <span>01 · 为什么要做</span>
+            <h2 id="slide-2-title">职场最贵的，不是沉默。<br /><em>是说完以后一直后悔。</em></h2>
+          </header>
+          <div class="pain-grid">
+            <article class="pain-card pain-card--boss reveal">
+              <span>上司高压局</span><b>压</b>
+              <blockquote>“这点小事为什么还没做完？”</blockquote>
+              <p>想守边界，又怕把工作聊崩。</p>
+            </article>
+            <article class="pain-card pain-card--friend reveal">
+              <span>友善同事局</span><b>暖</b>
+              <blockquote>“这块我先帮你顶一下？”</blockquote>
+              <p>想接住善意，又怕欠下人情。</p>
+            </article>
+            <article class="pain-card pain-card--hostile reveal">
+              <span>阴阳同事局</span><b>阴</b>
+              <blockquote>“不是早就说过了吗？”</blockquote>
+              <p>想回怼，但更需要留下事实。</p>
+            </article>
+          </div>
+          <div class="pain-conclusion reveal"><b>共同问题</b><span>情绪先到了，合适的话却还没来。</span></div>
+          <p class="slide-source">产品假设｜基于当前 Demo 定义的三类高频沟通场景，不代表外部统计结论</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:30</b>
+            <p>我们没有把职场沟通只理解成“怼领导”。友善同事要接住善意，不友善同事要固定事实，上司场景则要给面子、定边界、锁优先级。三种场景背后其实是同一个问题：情绪先到了，语言还没准备好。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--solution" data-slide data-duration="30" aria-labelledby="slide-3-title" hidden>
+          <header class="slide-heading reveal">
+            <span>02 · 我们的答案</span>
+            <h2 id="slide-3-title">不是教你吵架，<br />是帮你把<span>边界说清楚。</span></h2>
+          </header>
+          <div class="solution-flow reveal" aria-label="产品运行流程">
+            <article><b>01</b><span>选战场</span><p>上司、友善同事、阴阳同事</p></article>
+            <i>→</i>
+            <article><b>02</b><span>说原话</span><p>你本来想发什么，就真实输入什么</p></article>
+            <i>→</i>
+            <article><b>03</b><span>看反馈</span><p>对面先回应，AI 再拆解潜台词</p></article>
+            <i>→</i>
+            <article><b>04</b><span>拿话术</span><p>得到一条真的能发送的消息</p></article>
+          </div>
+          <figure class="product-shot reveal">
+            <img src="./artifacts/workplace-demo-initial.png" alt="工位开挂局主界面：左侧战场，中间聊天，右侧八字外挂" />
+            <figcaption><span>产品首屏</span><b>三大战场 × 真实输入 × 可选外挂</b></figcaption>
+          </figure>
+          <div class="solution-promise reveal">用户得到的不是一句“高情商废话”，而是一轮可观察、可改写、可重来的对话演练。</div>
+          <p class="slide-source">产品流程｜依据 index.html 与当前场景交互实现</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:30</b>
+            <p>使用非常直接：选一个战场，把你真实想说的话发进去，对面先给反馈，系统再告诉你刚才发生了什么，并给出能直接发送的版本。它不是替你变圆滑，而是帮你把情绪翻译成边界。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--demo" data-slide data-duration="50" aria-labelledby="slide-4-title" hidden>
+          <header class="slide-heading slide-heading--compact reveal">
+            <span>03 · 现场看一轮</span>
+            <h2 id="slide-4-title">1–3 秒思考，<span>对面先开口。</span></h2>
+          </header>
+          <div class="demo-shell reveal" id="roadshow-demo">
+            <div class="demo-shell__top">
+              <div><b>王</b><span>领导 · 王总<small>临下班突然加活</small></span></div>
+              <i>● 正在施压</i>
+            </div>
+            <div class="demo-chat">
+              <div class="demo-message demo-message--opponent"><span>王总 · 18:26</span><p>这点小事为什么还没做完？今晚给我。</p></div>
+              <div class="demo-message demo-message--me"><span>我</span><p>好的，我尽量今晚做完。</p></div>
+              <div class="demo-thinking" id="roadshow-thinking">
+                <b><i></i><i></i><i></i></b>
+                <span>正在模拟真实职场反馈 · <strong id="roadshow-thinking-seconds">2.1s</strong></span>
+              </div>
+              <div class="demo-message demo-message--feedback" id="roadshow-feedback"><span>王总 · 对方反馈</span><p>那就今晚给我，别拖了。</p></div>
+            </div>
+            <div class="demo-analysis" id="roadshow-analysis">
+              <span>AI 拆招</span>
+              <div><b>潜台词</b><p>他没有确认优先级，但默认你接下了全部任务。</p></div>
+              <div><b>可发送</b><p id="roadshow-stream"></p><i class="stream-caret" aria-hidden="true"></i></div>
+            </div>
+          </div>
+          <div class="demo-rule reveal"><b>真实感来自：</b><span>Python 生成 1–3 秒随机思考时间</span><span>先反馈，再流式输出</span><span>用户原话真实进入对话</span></div>
+          <p class="slide-source">运行依据｜server.py 的随机等待与流式响应；当前主对话使用本地场景规则保证路演稳定</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:50</b>
+            <p>比如王总临下班加活。用户原本回“我尽量”，系统不会立刻甩答案，而是先等待一到三秒，让王总给出真实反馈。然后再拆解：问题不是你不努力，而是你接下了一个没有明确优先级的承诺。最后给出一条可直接发送的话术。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--bazi" data-slide data-duration="50" aria-labelledby="slide-5-title" hidden>
+          <div class="bazi-intro reveal">
+            <span>04 · 可选增益</span>
+            <h2 id="slide-5-title">如果沟通也能<br />提前看见<span>雷区</span>？</h2>
+            <p>八字在这里不是“给人定性”，而是一台娱乐化的沟通假设生成器。</p>
+            <div class="bazi-inputs"><span>姓名</span><span>性别</span><span>出生日期</span><span>出生时间</span><span>出生地点</span></div>
+          </div>
+          <div class="bazi-console reveal">
+            <div class="bazi-orbit" aria-hidden="true"><i>甲</i><i>寅</i><i>丙</i><i>午</i><i>庚</i><i>戌</i><b>命</b></div>
+            <span>BAZI SKILL · 五行命理分析</span>
+            <h3>王总的沟通侧写</h3>
+            <div class="bazi-pillars"><b>甲寅</b><b>丙午</b><b>庚戌</b><b>戊辰</b></div>
+            <ul>
+              <li><b>喜欢什么</b><span>先给结论，再给选择题</span></li>
+              <li><b>怕什么</b><span>公开失去判断权与信息优势</span></li>
+              <li><b>怎么聊</b><span>给面子、定边界、锁优先级</span></li>
+            </ul>
+          </div>
+          <div class="bazi-live reveal">
+            <b>实时加深</b>
+            <p>命盘提供初始假设，聊天内容持续校正分析。</p>
+            <span>四柱 → 日主 → 五行旺衰 → 喜忌 → 职场话术</span>
+          </div>
+          <p class="slide-source slide-source--dark">实现依据｜jinchenma94/bazi-skill 排盘结构 + DeepSeek 语言生成；命理内容仅作娱乐化沟通线索</p>
+          <aside class="speaker-notes speaker-notes--dark">
+            <b>建议用时 00:50</b>
+            <p>真正让人记住这个产品的是八字外挂。录入对方出生信息后，系统先按四柱、日主和五行进行排盘，再把命理结构翻译成喜欢什么、怕什么、适合聊什么。重点是：命盘只提供初始假设，真实聊天会不断校正它，我们不会拿命理替代真实人格判断。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--rewind" data-slide data-duration="40" aria-labelledby="slide-6-title" hidden>
+          <header class="slide-heading reveal">
+            <span>05 · 产品爽点</span>
+            <h2 id="slide-6-title">说错了？<span>回到发送前。</span></h2>
+          </header>
+          <div class="rewind-stage reveal">
+            <div class="rewind-before">
+              <span>刚刚发出</span>
+              <blockquote>“去你的，我不干了。”</blockquote>
+              <i>后悔值 +100</i>
+            </div>
+            <div class="rewind-vortex" aria-hidden="true"><b>回</b><i></i><i></i><i></i></div>
+            <div class="rewind-after">
+              <span>回溯改写</span>
+              <blockquote>“可以推进。请确认 A、B、C 中真正的最高优先级，我按您拍板的顺序交付。”</blockquote>
+              <i>边界清楚，工作继续</i>
+            </div>
+          </div>
+          <div class="patience-demo reveal">
+            <div><span>今日耐心余额</span><strong>68%</strong></div>
+            <div class="patience-demo__bar"><i></i></div>
+            <p><b>-8</b> 临时加活　<b>+12</b> 友善协作　<b>+4</b> 回溯返还后悔税</p>
+          </div>
+          <p class="slide-source">功能依据｜聊天框开启八字外挂后解锁回溯；耐心余额按当天保存在当前浏览器</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:40</b>
+            <p>第二个记忆点是回溯。它不放在玄学排盘里，而是在真实聊天中、开启外挂之后解锁。用户可以回到刚才吃瘪的节点，重新组织语言。耐心余额则把一次次边界、协作和后悔变成能看懂的情绪账单。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--tech" data-slide data-duration="40" aria-labelledby="slide-7-title" hidden>
+          <header class="slide-heading slide-heading--compact reveal">
+            <span>06 · 它怎么跑起来</span>
+            <h2 id="slide-7-title">玄学负责记忆点，<span>工程负责可信度。</span></h2>
+          </header>
+          <div class="tech-flow reveal">
+            <article class="tech-node tech-node--blue"><b>前端体验</b><span>HTML · CSS · JavaScript</span><p>场景、动效、流式文字、回溯状态</p></article>
+            <i>→</i>
+            <article class="tech-node tech-node--red"><b>Python 服务</b><span>API Proxy · Streaming</span><p>随机等待、接口代理、本地降级</p></article>
+            <i>→</i>
+            <div class="tech-fork">
+              <article class="tech-node tech-node--yellow"><b>bazi-skill</b><span>四柱排盘</span><p>日主、五行、喜忌结构</p></article>
+              <article class="tech-node tech-node--black"><b>DeepSeek</b><span>语言生成</span><p>侧写翻译、实时分析、话术</p></article>
+            </div>
+          </div>
+          <div class="tech-proof reveal">
+            <article><b>稳定</b><p>模型不可用时自动回到本地演示引擎，路演流程不断。</p></article>
+            <article><b>安全</b><p>API Key 只在服务端环境变量或 macOS 钥匙串读取，不进入浏览器。</p></article>
+            <article><b>克制</b><p>八字只作娱乐化沟通线索，不用于招聘、绩效或真实人格裁决。</p></article>
+          </div>
+          <p class="slide-source">技术依据｜server.py、README.md 与 bazi-skill 结构；“API Proxy”指由服务端代替浏览器调用模型接口</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:40</b>
+            <p>工程上，前端负责状态和动效，Python 负责一到三秒随机等待、流式响应和模型代理。bazi-skill 提供结构化排盘，DeepSeek 负责把结构翻译成人能看懂的话。模型失败会切回本地演示引擎；API Key 永远不会进入浏览器。</p>
+          </aside>
+        </section>
+
+        <section class="pitch-slide pitch-slide--close" data-slide data-duration="35" aria-labelledby="slide-8-title" hidden>
+          <div class="close-copy">
+            <span class="eyebrow reveal">07 · 最后一句</span>
+            <h2 id="slide-8-title" class="reveal">我们不替你吵架。</h2>
+            <p class="reveal">我们让你在按下发送前，<br /><b>先赢回一次主动权。</b></p>
+          </div>
+          <div class="close-action reveal">
+            <span>LIVE DEMO</span>
+            <strong>现在，选一个<br />让你心梗的人。</strong>
+            <a href="./">进入工位开挂局 <b>→</b></a>
+            <small>本地演示地址 · 当前服务</small>
+          </div>
+          <div class="close-stamps" aria-hidden="true"><i>说清楚</i><i>不背锅</i><i>能发送</i></div>
+          <p class="slide-source">工位开挂局 · 原型 01｜职场沟通娱乐化 Demo</p>
+          <aside class="speaker-notes">
+            <b>建议用时 00:35</b>
+            <p>所以我们最终想交付的，不是一次漂亮回怼，而是按下发送前的主动权。工位开挂局，不替你吵架，帮你把边界说清楚。现在，我们可以现场选一个让你心梗的人，跑一轮真实 Demo。谢谢。</p>
+          </aside>
+        </section>
+      </main>
+
+      <footer class="pitch-controls">
+        <div class="pitch-controls__help"><kbd>←</kbd><kbd>→</kbd> 翻页　<kbd>N</kbd> 提词　<kbd>F</kbd> 全屏　<kbd>A</kbd> 自动</div>
+        <div class="pitch-controls__nav">
+          <button id="pitch-prev" type="button" aria-label="上一页">←</button>
+          <span><b id="pitch-current">01</b> / <i id="pitch-total">08</i></span>
+          <button id="pitch-next" type="button" aria-label="下一页">→</button>
+        </div>
+        <div class="pitch-controls__actions">
+          <button id="pitch-notes" type="button" aria-pressed="false">演讲提示 N</button>
+          <button id="pitch-auto" type="button" aria-pressed="false">自动演示 A</button>
+          <button id="pitch-fullscreen" type="button">全屏 F</button>
+        </div>
+      </footer>
+
+      <div class="pitch-start" id="pitch-start" role="dialog" aria-modal="true" aria-labelledby="pitch-start-title">
+        <div class="pitch-start__card">
+          <span>ROADSHOW MODE · 05:00</span>
+          <h2 id="pitch-start-title">路演准备好了</h2>
+          <p>8 页 · 严格 5 分钟 · 桌面端演示</p>
+          <button id="pitch-start-button" type="button">开始计时 <b>→</b></button>
+          <small>按 Enter 也可以开始</small>
+        </div>
+      </div>
+    </div>
+
+    <script src="./roadshow.js" defer></script>
+  </body>
+</html>
