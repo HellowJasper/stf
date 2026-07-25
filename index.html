@@ -194,6 +194,61 @@
               <span class="analysis-card__tag" id="analysis-mode">基础拆招</span>
             </header>
 
+            <section class="character-profile" id="character-profile" aria-labelledby="character-archetype">
+              <header>
+                <div class="character-profile__identity">
+                  <span class="character-profile__avatar" id="character-avatar" aria-hidden="true">王</span>
+                  <div>
+                    <small>人物反应侧写 · 不是万能 NPC</small>
+                    <h4 id="character-archetype">等待本轮真实反应</h4>
+                    <p id="character-role">根据对方原话与关系位置判断</p>
+                  </div>
+                </div>
+                <span class="character-profile__source" id="character-source">本轮聊天证据</span>
+              </header>
+              <ul class="character-profile__tags" id="character-tags"></ul>
+              <p class="character-profile__evidence" id="character-evidence"></p>
+              <dl class="character-profile__grid">
+                <div>
+                  <dt>这句话暴露的惯性</dt>
+                  <dd id="character-tendency"></dd>
+                </div>
+                <div>
+                  <dt>此刻真正要保住的东西</dt>
+                  <dd id="character-need"></dd>
+                </div>
+                <div>
+                  <dt>稳定说话习惯</dt>
+                  <dd id="character-habit"></dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="chat-bazi-profile" id="chat-bazi-profile" aria-labelledby="chat-bazi-title" hidden>
+              <header>
+                <span class="chat-bazi-profile__seal" aria-hidden="true">命</span>
+                <div>
+                  <small>八字外挂 · 专业命盘校准</small>
+                  <h4 id="chat-bazi-title">四柱结构正在接管本轮话术</h4>
+                </div>
+                <strong>lunar_python 实盘</strong>
+              </header>
+              <div class="chat-bazi-pillars" id="chat-bazi-pillars" aria-label="本轮沟通对象四柱"></div>
+              <dl class="chat-bazi-facts">
+                <div><dt>日主</dt><dd id="chat-bazi-day-master">—</dd></div>
+                <div><dt>月令</dt><dd id="chat-bazi-month">—</dd></div>
+                <div><dt>可见十神</dt><dd id="chat-bazi-ten-gods">—</dd></div>
+                <div><dt>五行表层</dt><dd id="chat-bazi-elements">—</dd></div>
+              </dl>
+              <p class="chat-bazi-structure" id="chat-bazi-structure"></p>
+              <blockquote id="chat-bazi-translation"></blockquote>
+              <div class="chat-bazi-actions">
+                <p><span>避雷</span><strong id="chat-bazi-avoid">—</strong></p>
+                <p><span>顺势</span><strong id="chat-bazi-approach">—</strong></p>
+              </div>
+              <footer id="chat-bazi-basis"></footer>
+            </section>
+
             <ol class="analysis-steps" id="analysis-steps"></ol>
 
             <div class="reply-box">

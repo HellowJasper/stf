@@ -15,12 +15,12 @@ const scenarios = {
     },
     bazi: {
       pillars: [
-        ["年柱", "甲寅"],
-        ["月柱", "丙午"],
-        ["日柱", "庚戌"],
-        ["时柱", "戊辰"],
+        ["年柱", "乙丑"],
+        ["月柱", "壬午"],
+        ["日柱", "戊子"],
+        ["时柱", "丁巳"],
       ],
-      element: "火旺 · 行动力强",
+      element: "戊土日主 · 火土偏显",
       compatibility: 58,
       trigger: "公开否定他的判断",
       delight: "先给结论，再给他选择题",
@@ -43,12 +43,12 @@ const scenarios = {
     },
     bazi: {
       pillars: [
-        ["年柱", "乙卯"],
-        ["月柱", "癸未"],
-        ["日柱", "丁亥"],
-        ["时柱", "辛丑"],
+        ["年柱", "丙子"],
+        ["月柱", "戊戌"],
+        ["日柱", "甲辰"],
+        ["时柱", "壬申"],
       ],
-      element: "水木 · 重视感受",
+      element: "甲木日主 · 土水偏显",
       compatibility: 87,
       trigger: "好意被当作理所当然",
       delight: "明确感谢，再给出互助承诺",
@@ -71,12 +71,12 @@ const scenarios = {
     },
     bazi: {
       pillars: [
-        ["年柱", "庚申"],
-        ["月柱", "戊戌"],
-        ["日柱", "辛酉"],
-        ["时柱", "己丑"],
+        ["年柱", "庚午"],
+        ["月柱", "戊寅"],
+        ["日柱", "庚戌"],
+        ["时柱", "丙戌"],
       ],
-      element: "金土 · 强调掌控",
+      element: "庚金日主 · 土金偏显",
       compatibility: 41,
       trigger: "失去信息优势和话语权",
       delight: "给台阶，但把记录留全",
@@ -125,6 +125,27 @@ const thinkingLine = document.querySelector("#thinking-line");
 const analysisCard = document.querySelector("#analysis-card");
 const analysisMode = document.querySelector("#analysis-mode");
 const analysisSteps = document.querySelector("#analysis-steps");
+const characterProfile = document.querySelector("#character-profile");
+const characterAvatar = document.querySelector("#character-avatar");
+const characterArchetype = document.querySelector("#character-archetype");
+const characterRole = document.querySelector("#character-role");
+const characterSource = document.querySelector("#character-source");
+const characterTags = document.querySelector("#character-tags");
+const characterEvidence = document.querySelector("#character-evidence");
+const characterTendency = document.querySelector("#character-tendency");
+const characterNeed = document.querySelector("#character-need");
+const characterHabit = document.querySelector("#character-habit");
+const chatBaziProfile = document.querySelector("#chat-bazi-profile");
+const chatBaziPillars = document.querySelector("#chat-bazi-pillars");
+const chatBaziDayMaster = document.querySelector("#chat-bazi-day-master");
+const chatBaziMonth = document.querySelector("#chat-bazi-month");
+const chatBaziTenGods = document.querySelector("#chat-bazi-ten-gods");
+const chatBaziElements = document.querySelector("#chat-bazi-elements");
+const chatBaziStructure = document.querySelector("#chat-bazi-structure");
+const chatBaziTranslation = document.querySelector("#chat-bazi-translation");
+const chatBaziAvoid = document.querySelector("#chat-bazi-avoid");
+const chatBaziApproach = document.querySelector("#chat-bazi-approach");
+const chatBaziBasis = document.querySelector("#chat-bazi-basis");
 const replyTone = document.querySelector("#reply-tone");
 const streamingReply = document.querySelector("#streaming-reply");
 const streamingCaret = document.querySelector("#streaming-caret");
@@ -433,8 +454,9 @@ function clearGeneratedConversation() {
   document.querySelectorAll(".message-row--user, .message-row--feedback").forEach((node) => node.remove());
   activeFeedbackBubble = null;
   thinkingCard.hidden = true;
-  thinkingCard.classList.remove("is-counting");
+  thinkingCard.classList.remove("is-counting", "is-coaching");
   analysisCard.hidden = true;
+  resetAnalysisProfiles();
   analysisSteps.replaceChildren();
   streamingReply.textContent = "";
   streamingCaret.hidden = true;
@@ -617,7 +639,7 @@ function addUserMessage(text) {
   chatWindow.insertBefore(row, thinkingCard);
 }
 
-function beginOpponentFeedback(sender, reaction) {
+function beginOpponentFeedback(sender, reaction, source = "demo-fallback") {
   stopThinkingLoop();
   thinkingCard.hidden = true;
 
@@ -631,7 +653,9 @@ function beginOpponentFeedback(sender, reaction) {
     <div class="bubble-meta"><span></span><time>${time}</time></div>
     <div class="chat-bubble chat-bubble--opponent"></div>
   `;
-  row.querySelector(".bubble-meta span").textContent = `${sender} · 已接招`;
+  row.querySelector(".bubble-meta span").textContent = source === "deepseek-v4"
+    ? `${sender} · AI 实时角色回应`
+    : `${sender} · 场景角色回应`;
   activeFeedbackBubble = row.querySelector(".chat-bubble");
   chatWindow.insertBefore(row, thinkingCard);
   scrollChatToBottom();
@@ -660,18 +684,96 @@ function showThinking(seconds) {
   thinkingCard.classList.add("is-counting");
 }
 
+function showCoachWait(event) {
+  thinkingCard.hidden = false;
+  thinkingCard.classList.remove("is-counting");
+  thinkingCard.classList.add("is-coaching");
+  thinkingSeconds.textContent = event.bazi_enabled ? "命盘校准中" : "人物建模中";
+  thinkingLine.textContent = event.bazi_enabled
+    ? "对方已经回话，AI 正在把本轮证据与日主、月令、十神一起复盘……"
+    : "对方已经回话，AI 正在根据关系位置和本轮措辞整理人物侧写……";
+  scrollChatToBottom();
+}
+
 function beginAnalysis(event) {
   stopThinkingLoop();
   thinkingCard.hidden = true;
+  thinkingCard.classList.remove("is-coaching");
   analysisCard.hidden = false;
   analysisMode.textContent = event.mode;
   replyTone.textContent = event.tone;
   satisfactionScore.textContent = event.satisfaction;
   workScore.textContent = event.work;
+  resetAnalysisProfiles();
   analysisSteps.replaceChildren();
   streamingReply.textContent = "";
   streamingCaret.hidden = false;
   scrollChatToBottom();
+}
+
+function resetAnalysisProfiles() {
+  analysisCard.classList.remove("is-bazi-analysis");
+  characterProfile.classList.remove("is-ai-generated");
+  characterAvatar.textContent = scenarios[activeScenario].avatar;
+  characterArchetype.textContent = "正在从本轮原话识别人设惯性";
+  characterRole.textContent = `${scenarios[activeScenario].sender} · 等待真实反馈`;
+  characterSource.textContent = "本轮聊天证据";
+  characterTags.replaceChildren();
+  characterEvidence.textContent = "";
+  characterTendency.textContent = "等待对方回应";
+  characterNeed.textContent = "等待本轮上下文";
+  characterHabit.textContent = "等待人物语言证据";
+  chatBaziProfile.hidden = true;
+  chatBaziPillars.replaceChildren();
+}
+
+function renderCharacterProfile(event) {
+  const profile = event.profile || {};
+  characterProfile.classList.toggle("is-ai-generated", event.source === "deepseek-v4");
+  characterAvatar.textContent = (profile.name || scenarios[activeScenario].sender).slice(0, 1);
+  characterArchetype.textContent = profile.archetype || "本轮人物侧写";
+  characterRole.textContent = `${profile.name || scenarios[activeScenario].sender} · ${profile.role || "职场对象"}`;
+  characterSource.textContent = event.source === "deepseek-v4"
+    ? "DeepSeek · 本轮语境"
+    : "场景规则 · 本轮语境";
+  const tagFragment = document.createDocumentFragment();
+  (profile.traits || []).slice(0, 3).forEach((text) => {
+    const item = document.createElement("li");
+    item.textContent = text;
+    tagFragment.append(item);
+  });
+  characterTags.replaceChildren(tagFragment);
+  characterEvidence.textContent = profile.evidence || "";
+  characterTendency.textContent = profile.observed_tendency || "当前证据不足";
+  characterNeed.textContent = profile.current_need || "当前证据不足";
+  characterHabit.textContent = profile.communication_habit || "当前证据不足";
+}
+
+function renderChatBaziProfile(profile = {}) {
+  analysisCard.classList.add("is-bazi-analysis");
+  chatBaziProfile.hidden = false;
+  const pillarFragment = document.createDocumentFragment();
+  (profile.pillars || []).slice(0, 4).forEach((pillar) => {
+    const item = document.createElement("div");
+    const label = document.createElement("small");
+    const ganzhi = document.createElement("strong");
+    const tenGod = document.createElement("span");
+    label.textContent = pillar.label;
+    ganzhi.textContent = pillar.ganzhi;
+    tenGod.textContent = pillar.ten_god;
+    item.append(label, ganzhi, tenGod);
+    pillarFragment.append(item);
+  });
+  chatBaziPillars.replaceChildren(pillarFragment);
+  chatBaziDayMaster.textContent = profile.day_master || "—";
+  chatBaziMonth.textContent = profile.month_command || "—";
+  chatBaziTenGods.textContent = profile.key_ten_gods || "—";
+  chatBaziElements.textContent = profile.element_balance || "—";
+  chatBaziStructure.textContent = profile.structure_note || "";
+  chatBaziTranslation.textContent = profile.communication_translation || "";
+  chatBaziAvoid.textContent = profile.avoid || "—";
+  chatBaziApproach.textContent = profile.approach || "—";
+  chatBaziBasis.textContent = profile.classic_basis || "";
 }
 
 function appendAnalysisStep(text) {
@@ -687,14 +789,23 @@ function handleStreamEvent(event) {
       showThinking(event.think_seconds);
       break;
     case "opponent_start":
-      beginOpponentFeedback(event.sender, event.reaction);
+      beginOpponentFeedback(event.sender, event.reaction, event.source);
       break;
     case "opponent_delta":
       if (activeFeedbackBubble) activeFeedbackBubble.textContent += event.text;
       scrollChatToBottom();
       break;
+    case "coach_wait":
+      showCoachWait(event);
+      break;
     case "analysis_start":
       beginAnalysis(event);
+      break;
+    case "character_profile":
+      renderCharacterProfile(event);
+      break;
+    case "bazi_professional":
+      renderChatBaziProfile(event.profile);
       break;
     case "analysis_item":
       appendAnalysisStep(event.text);
@@ -791,6 +902,14 @@ async function submitMessage(event) {
         scenario: activeScenario,
         bazi_enabled: cheatEnabled,
         message: text,
+        recent_messages: collectTranscript(),
+        bazi_profile: cheatEnabled ? {
+          pillars: scenarios[activeScenario].bazi.pillars.map(([label, value]) => `${label}${value}`),
+          element: scenarios[activeScenario].bazi.element,
+          communication_preference: scenarios[activeScenario].bazi.strategy,
+          trigger: scenarios[activeScenario].bazi.trigger,
+          delight: scenarios[activeScenario].bazi.delight,
+        } : {},
       }),
       signal: requestController.signal,
     });

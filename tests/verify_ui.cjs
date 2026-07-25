@@ -73,15 +73,23 @@ function assert(condition, message) {
     await page.waitForTimeout(450);
     await page.screenshot({ path: path.join(artifacts, "workplace-demo-thinking.png"), fullPage: true });
 
-    await page.locator("#analysis-card").waitFor({ state: "visible", timeout: 7000 });
-    await page.locator(".message-row--feedback").waitFor({ state: "visible", timeout: 7000 });
+    await page.locator("#analysis-card").waitFor({ state: "visible", timeout: 18000 });
+    await page.locator(".message-row--feedback").waitFor({ state: "visible", timeout: 18000 });
     assert((await page.locator(".message-row--user .chat-bubble").textContent()).trim() === sentMessage, "用户原话没有真实进入聊天区");
     const opponentFeedback = (await page.locator(".message-row--feedback .chat-bubble").textContent()).trim();
     assert(opponentFeedback.length > 15, "对方没有给出对应反馈");
-    await page.locator("#copy-reply:not([disabled])").waitFor({ state: "visible", timeout: 7000 });
+    await page.locator("#copy-reply:not([disabled])").waitFor({ state: "visible", timeout: 18000 });
     const reply = (await page.locator("#streaming-reply").textContent()).trim();
     assert(reply.length > 20, "流式回复内容不完整");
     assert((await page.locator("#analysis-steps li").count()) === 4, "外挂模式分析摘要数量不正确");
+    assert((await page.locator("#character-tags li").count()) === 3, "人物性格标签没有完整渲染");
+    assert((await page.locator("#character-evidence").textContent()).includes(opponentFeedback.slice(0, 12)), "人物侧写没有引用本轮真实回复");
+    assert(await page.locator("#chat-bazi-profile").isVisible(), "开启外挂后没有展示专业八字校准");
+    assert(await page.locator("#analysis-card").evaluate((node) => node.classList.contains("is-bazi-analysis")), "外挂结果没有进入专业命盘视觉模式");
+    assert((await page.locator("#chat-bazi-pillars > div").count()) === 4, "聊天区专业四柱没有完整渲染");
+    assert((await page.locator("#chat-bazi-day-master").textContent()).includes("甲 · 阳木"), "聊天区日主不是历法引擎的真实结果");
+    assert((await page.locator("#chat-bazi-month").textContent()).includes("戌月令"), "聊天区月令没有展示");
+    assert((await page.locator("#chat-bazi-ten-gods").textContent()).trim().length > 2, "聊天区可见十神没有展示");
     assert(await page.locator("#chat-rewind-button").isEnabled(), "完成聊天后回溯按钮没有解锁");
     assert((await page.locator("#patience-balance").textContent()).trim() === "80%", "友善协作完成后耐心余额没有回血 12 点");
     const storedPatience = await page.evaluate(() => JSON.parse(localStorage.getItem("stf-daily-patience-v1")));
@@ -116,6 +124,16 @@ function assert(condition, message) {
     await page.getByRole("button", { name: /上司高压局/ }).click();
     assert(await page.locator("#send-button").isEnabled(), "切换场景后发送按钮没有恢复");
     assert(await page.locator("#thinking-card").isHidden(), "切换场景后思考状态没有清理");
+
+    await page.locator("#user-message").fill("今晚我先交框架，完整稿明天十一点给您，请确认验收口径。");
+    await page.locator("#send-button").click();
+    await page.locator("#analysis-card").waitFor({ state: "visible", timeout: 18000 });
+    await page.locator("#copy-reply:not([disabled])").waitFor({ state: "visible", timeout: 18000 });
+    assert((await page.locator("#analysis-steps li").count()) === 3, "普通模式公开分析不应混入八字项");
+    assert((await page.locator("#character-archetype").textContent()).includes("结果控制型上司"), "普通模式没有突出上司人物性格");
+    assert((await page.locator("#character-tags li").count()) === 3, "普通模式人物标签不完整");
+    assert(await page.locator("#chat-bazi-profile").isHidden(), "普通模式错误展示了八字专业卡");
+    await page.screenshot({ path: path.join(artifacts, "workplace-demo-character-real.png"), fullPage: true });
 
     await page.locator("#open-mystic-lab").click();
     await page.locator("#mystic-lab").waitFor({ state: "visible" });
@@ -203,6 +221,7 @@ function assert(condition, message) {
         "artifacts/workplace-demo-result.png",
         "artifacts/workplace-demo-cheat-loading.png",
         "artifacts/workplace-demo-chat-rewind.png",
+        "artifacts/workplace-demo-character-real.png",
         "artifacts/mystic-entry-freeze.png",
         "artifacts/mystic-entry-compass.png",
         "artifacts/mystic-lab-constellation-hover.png",

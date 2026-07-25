@@ -37,11 +37,94 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertEqual(boundary["reaction"], "开始拍板")
         self.assertEqual(confrontational["reaction"], "态度反弹")
 
-    def test_bazi_adds_one_public_calibration_item(self):
+    def test_bazi_changes_core_public_analysis_and_reply(self):
         normal = server.build_conversation_turn("hostile", False, "我们按群里的记录确认。")
         cheat = server.build_conversation_turn("hostile", True, "我们按群里的记录确认。")
         self.assertEqual(len(normal["analysis"]), 3)
         self.assertEqual(len(cheat["analysis"]), 4)
+        self.assertNotEqual(normal["analysis"][2], cheat["analysis"][2])
+        self.assertNotEqual(normal["reply"], cheat["reply"])
+        self.assertIn("失去信息优势", " ".join(cheat["analysis"]))
+
+    def test_ai_optimises_public_analysis_with_bazi_profile(self):
+        generated = {
+            "reaction_tag": "开始拍板",
+            "opponent_reply": "先做 A，另外两项明早给我时间表。",
+            "character_profile": {
+                "observed_tendency": "保留拍板权后，会接受清晰的任务排序。",
+                "current_need": "结果不失控，而且优先级由自己确认。",
+                "communication_habit": "先压结果，再对可执行选项做决定。",
+                "traits": ["结果优先", "保留拍板权", "接受选择题"],
+            },
+            "public_analysis": [
+                "你的限制表达得清楚，但没有直接拒绝推进。",
+                "对方保留拍板权后，开始接受任务排序。",
+                "当前风险是另外两项仍缺少明确时间。",
+                "外挂校准：避开公开否定，先给结论再让对方选择。",
+            ],
+            "suggested_next_message": "收到，今晚先交 A；B、C 明早补时间表，请按这个顺序验收。",
+            "bazi_communication": "戊土日主生于午月，本轮先给结论，再保留对方拍板权。",
+            "tone": "AI体面反杀",
+            "satisfaction": 93,
+            "work_progress": 96,
+            "outcome": "你把临时加活改成了由上司确认的优先级。",
+        }
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ) as deepseek:
+            result = server.generate_workplace_turn(
+                "boss",
+                True,
+                "我可以接，但需要确认优先级。",
+                {
+                    "communication_preference": "先结论后选择",
+                    "trigger": "公开否定",
+                    "delight": "保留拍板权",
+                },
+                [{"role": "opponent", "text": "今晚给我。"}],
+            )
+
+        sent_data = deepseek.call_args.args[1]
+        self.assertEqual(result["source"], "deepseek-v4")
+        self.assertEqual(result["opponent_reply"], generated["opponent_reply"])
+        self.assertEqual(result["analysis"], generated["public_analysis"])
+        self.assertEqual(result["reply"], generated["suggested_next_message"])
+        self.assertEqual(result["character_profile"]["traits"], generated["character_profile"]["traits"])
+        self.assertIn("戊 · 阳土", result["professional_bazi"]["day_master"])
+        self.assertIn("戊土日主", result["professional_bazi"]["communication_translation"])
+        self.assertTrue(sent_data["bazi_enabled"])
+        self.assertEqual(sent_data["bazi_profile"]["trigger"], "公开否定")
+        self.assertEqual(sent_data["professional_bazi"]["pillars"][0]["ganzhi"], "乙丑")
+        self.assertEqual(deepseek.call_args.kwargs["max_tokens"], 700)
+
+    def test_main_chat_bazi_uses_real_calendar_chart(self):
+        normal = server.build_conversation_turn(
+            "boss", False, "请您确认一个最高优先级。"
+        )
+        cheat = server.build_conversation_turn(
+            "boss", True, "请您确认一个最高优先级。"
+        )
+        profile = cheat["professional_bazi"]
+        self.assertIsNone(normal["professional_bazi"])
+        self.assertEqual(
+            [item["ganzhi"] for item in profile["pillars"]],
+            ["乙丑", "壬午", "戊子", "丁巳"],
+        )
+        self.assertEqual(profile["day_master"], "戊 · 阳土")
+        self.assertEqual(profile["month_command"], "午月令 · 火")
+        self.assertIn("偏财", profile["key_ten_gods"])
+        self.assertIn("《滴天髓》", profile["classic_basis"])
+
+    def test_ai_turn_falls_back_when_model_times_out(self):
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", side_effect=RuntimeError("timeout")
+        ):
+            result = server.generate_workplace_turn(
+                "friendly", True, "谢谢你，我们明确一下分工。"
+            )
+        self.assertEqual(result["source"], "demo-fallback")
+        self.assertIn("timeout", result["warning"])
+        self.assertEqual(len(result["analysis"]), 4)
 
     def test_patience_change_is_scenario_style_and_cheat_aware(self):
         friendly = server.build_conversation_turn(
@@ -154,7 +237,7 @@ class StreamingApiTests(unittest.TestCase):
 
         with patch("server.random_think_delay", return_value=1.25), patch(
             "server.time.sleep", return_value=None
-        ):
+        ), patch("server.deepseek_is_configured", return_value=False):
             with urllib.request.urlopen(request, timeout=3) as response:
                 events = [json.loads(line) for line in response if line.strip()]
 
@@ -163,12 +246,15 @@ class StreamingApiTests(unittest.TestCase):
         self.assertIn("opponent_start", event_types)
         self.assertIn("opponent_delta", event_types)
         self.assertIn("analysis_start", event_types)
+        self.assertIn("character_profile", event_types)
+        self.assertIn("bazi_professional", event_types)
         self.assertIn("analysis_item", event_types)
         self.assertIn("delta", event_types)
         self.assertEqual(events[-1]["type"], "done")
         self.assertIn("patience_delta", events[-1])
         self.assertIn("patience_reason", events[-1])
         self.assertLess(event_types.index("opponent_start"), event_types.index("analysis_start"))
+        self.assertLess(event_types.index("analysis_start"), event_types.index("character_profile"))
 
     def request_json(self, path, payload=None):
         data = None if payload is None else json.dumps(payload).encode("utf-8")
