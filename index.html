@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="工位开挂局——把难聊的话，聊出爽感。职场沟通与八字外挂体验 Demo。"
+    />
+    <meta name="theme-color" content="#ffe600" />
+    <title>工位开挂局｜职场对话拆招 Demo</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ffe600'/%3E%3Cpath d='M13 14h38v36H13z' fill='%23131313'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='28' font-family='sans-serif' font-weight='900' fill='%23ffe600'%3E爽%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#conversation-title">跳到对话区</a>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker__track">
+        <span>今天也要体面地发疯</span><i>✦</i>
+        <span>先把活干完，再把话说爽</span><i>✦</i>
+        <span>拒绝无效内耗</span><i>✦</i>
+        <span>今天也要体面地发疯</span><i>✦</i>
+        <span>先把活干完，再把话说爽</span><i>✦</i>
+        <span>拒绝无效内耗</span><i>✦</i>
+      </div>
+    </div>
+
+    <header class="masthead">
+      <div class="brand-block">
+        <span class="brand-block__demo">职场对话拆招 DEMO</span>
+        <div class="brand-block__title">
+          <span class="brand-block__stamp" aria-hidden="true">爽</span>
+          <h1>工位开挂局</h1>
+        </div>
+        <p>不憋屈，也不把工作聊崩。</p>
+      </div>
+
+      <button
+        class="patience-meter"
+        id="patience-meter"
+        type="button"
+        aria-expanded="false"
+        aria-controls="patience-ledger"
+        aria-label="今日耐心余额，点击查看明细"
+      >
+        <span class="patience-meter__label">
+          <span>今日耐心余额</span>
+          <strong id="patience-balance">68%</strong>
+        </span>
+        <span
+          class="patience-meter__track"
+          role="progressbar"
+          aria-label="今日耐心余额"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="68"
+        ><span id="patience-fill"></span></span>
+        <small id="patience-status">状态尚可，今天还能体面输出</small>
+        <i class="patience-meter__hint">点击看流水 ↗</i>
+      </button>
+
+      <aside class="patience-ledger" id="patience-ledger" aria-labelledby="patience-ledger-title" hidden>
+        <header>
+          <div>
+            <span>DAILY EMOTION ACCOUNT</span>
+            <h2 id="patience-ledger-title">今日耐心流水</h2>
+          </div>
+          <button id="close-patience-ledger" type="button" aria-label="关闭耐心明细">×</button>
+        </header>
+        <div class="patience-ledger__summary">
+          <div><strong id="patience-ledger-balance">68</strong><span>/ 100</span></div>
+          <p id="patience-ledger-date">—</p>
+        </div>
+        <ol class="patience-ledger__list" id="patience-ledger-list"></ol>
+        <p class="patience-ledger__empty" id="patience-ledger-empty">今天还没正式交手，耐心暂时安全。</p>
+        <footer>
+          <p>边界清楚会减损，友善合作会回血；数据仅保存在当前浏览器，当天有效。</p>
+          <button id="reset-patience" type="button">重置今日余额</button>
+        </footer>
+      </aside>
+    </header>
+
+    <div class="patience-toast" id="patience-toast" role="status" aria-live="polite" hidden></div>
+
+    <main class="demo-layout">
+      <aside class="scene-rail" aria-labelledby="scene-heading">
+        <div class="section-kicker">
+          <span>01</span>
+          <div>
+            <p>先选战场</p>
+            <h2 id="scene-heading">今天是谁<br />让你心梗？</h2>
+          </div>
+        </div>
+
+        <div class="scene-list" role="list">
+          <button
+            class="scene-card is-active"
+            type="button"
+            data-scenario="boss"
+            aria-pressed="true"
+          >
+            <span class="scene-card__index">01</span>
+            <span class="scene-card__copy">
+              <strong>上司高压局</strong>
+              <small>催、压、临时加活</small>
+            </span>
+            <span class="scene-card__badge" aria-hidden="true">压</span>
+          </button>
+
+          <button
+            class="scene-card"
+            type="button"
+            data-scenario="friendly"
+            aria-pressed="false"
+          >
+            <span class="scene-card__index">02</span>
+            <span class="scene-card__copy">
+              <strong>友善同事局</strong>
+              <small>接住善意，别欠人情</small>
+            </span>
+            <span class="scene-card__badge" aria-hidden="true">暖</span>
+          </button>
+
+          <button
+            class="scene-card"
+            type="button"
+            data-scenario="hostile"
+            aria-pressed="false"
+          >
+            <span class="scene-card__index">03</span>
+            <span class="scene-card__copy">
+              <strong>阴阳同事局</strong>
+              <small>不撕破脸，也不背锅</small>
+            </span>
+            <span class="scene-card__badge" aria-hidden="true">阴</span>
+          </button>
+        </div>
+
+        <div class="rail-note">
+          <span aria-hidden="true">※</span>
+          <p>这不是教你吵架，是教你把边界说清楚，还能顺手爽一下。</p>
+        </div>
+      </aside>
+
+      <section class="conversation-stage" aria-labelledby="conversation-title">
+        <header class="conversation-stage__header">
+          <div class="opponent-avatar" id="opponent-avatar" aria-hidden="true">王</div>
+          <div class="opponent-info">
+            <span class="opponent-info__eyebrow">今日对手</span>
+            <h2 id="conversation-title">领导 · 王总</h2>
+            <p id="scenario-description">临下班突然加活，还顺手压缩你的解释空间。</p>
+          </div>
+          <div class="mood-tag" id="mood-tag">
+            <span aria-hidden="true"></span>
+            正在施压
+          </div>
+        </header>
+
+        <div class="chat-window" id="chat-window" aria-live="polite">
+          <div class="message-row message-row--opponent">
+            <div class="bubble-meta">
+              <span id="message-sender">王总</span>
+              <time>18:26</time>
+            </div>
+            <div class="chat-bubble chat-bubble--opponent" id="opponent-message">
+              这点小事为什么还没做完？今晚给我。
+            </div>
+          </div>
+
+          <div class="thinking-card" id="thinking-card" hidden>
+            <div class="thinking-card__face" aria-hidden="true">
+              <span></span><span></span><i>⌁</i>
+            </div>
+            <div class="thinking-card__copy">
+              <div>
+                <strong>对方正在输入</strong>
+                <span id="thinking-seconds">1–3 秒</span>
+              </div>
+              <p id="thinking-line">消息已读，办公室空气突然安静……</p>
+              <div class="thinking-progress"><span id="thinking-progress"></span></div>
+            </div>
+          </div>
+
+          <article class="analysis-card" id="analysis-card" hidden>
+            <header>
+              <div>
+                <span class="analysis-card__eyebrow">公开分析摘要</span>
+                <h3>对方接招后，AI 再帮你拆局</h3>
+              </div>
+              <span class="analysis-card__tag" id="analysis-mode">基础拆招</span>
+            </header>
+
+            <ol class="analysis-steps" id="analysis-steps"></ol>
+
+            <div class="reply-box">
+              <div class="reply-box__header">
+                <div>
+                  <span>下一句建议</span>
+                  <strong id="reply-tone">爽到，但能发</strong>
+                </div>
+                <button class="copy-button" id="copy-reply" type="button" disabled>
+                  复制下一句
+                </button>
+              </div>
+              <p id="streaming-reply" aria-live="polite"></p>
+              <span class="streaming-caret" id="streaming-caret" hidden aria-hidden="true"></span>
+            </div>
+
+            <div class="result-meters">
+              <div>
+                <span>爽感</span>
+                <div class="mini-meter"><i id="satisfaction-meter"></i></div>
+                <strong id="satisfaction-score">88</strong>
+              </div>
+              <div>
+                <span>工作推进</span>
+                <div class="mini-meter"><i id="work-meter"></i></div>
+                <strong id="work-score">91</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <form class="composer" id="composer">
+          <div class="chat-rewind-bar" id="chat-rewind-bar" hidden>
+            <span class="chat-rewind-bar__seal" aria-hidden="true">回</span>
+            <div>
+              <strong>八字外挂 · 回溯已解锁</strong>
+              <small id="chat-rewind-copy">完成一轮聊天后，可回到刚才发送前。</small>
+            </div>
+            <button id="chat-rewind-button" type="button" disabled>回到发送前</button>
+          </div>
+          <label for="user-message">这句话，你准备直接发给对方</label>
+          <div class="quick-prompts" id="quick-prompts" aria-label="快捷话术"></div>
+          <div class="composer__row">
+            <textarea
+              id="user-message"
+              rows="2"
+              maxlength="240"
+              placeholder="输入你真的会在企业微信、飞书或钉钉里发出去的话。"
+            ></textarea>
+            <button class="send-button" id="send-button" type="submit">
+              <span>发送给对方</span>
+              <i aria-hidden="true">→</i>
+            </button>
+          </div>
+          <p class="composer__status" id="composer-status" role="status"></p>
+        </form>
+
+        <div class="chat-rewind-flash" id="chat-rewind-flash" aria-hidden="true">
+          <div aria-hidden="true"><span>回</span></div>
+          <strong>正在回到发送前</strong>
+          <small>保留经验，重写这句话。</small>
+        </div>
+      </section>
+
+      <aside class="cheat-console" aria-labelledby="cheat-title">
+        <div class="cheat-console__burst" aria-hidden="true">外挂<br />加载区</div>
+        <header>
+          <div class="cheat-heading">
+            <button
+              class="mystic-open"
+              id="open-mystic-lab"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="mystic-lab"
+            >
+              02 · 可选增益 <i aria-hidden="true">↗</i>
+            </button>
+            <h2 id="cheat-title">八字外挂</h2>
+          </div>
+          <button
+            class="cheat-switch"
+            id="cheat-switch"
+            type="button"
+            role="switch"
+            aria-checked="false"
+          >
+            <span></span>
+            <strong>未开启</strong>
+          </button>
+        </header>
+
+        <p class="cheat-intro">
+          假定已知对方八字，追加“合不合、雷点在哪、怎样顺毛”的娱乐化策略。
+        </p>
+
+        <div class="bazi-lock" id="bazi-lock" aria-live="polite">
+          <span id="bazi-lock-seal" aria-hidden="true">挂</span>
+          <strong id="bazi-lock-title">点击开启今日外挂</strong>
+          <small id="bazi-lock-copy">开启后，对方反馈会多一层角色校准</small>
+        </div>
+
+        <div class="bazi-profile" id="bazi-profile" aria-hidden="true">
+          <div class="bazi-profile__label">
+            <span>对方假定四柱</span>
+            <small id="element-label">火旺 · 行动力强</small>
+          </div>
+          <div class="pillar-grid" id="pillar-grid"></div>
+
+          <div class="compatibility">
+            <div>
+              <span>今日合拍指数</span>
+              <strong id="compatibility-score">58%</strong>
+            </div>
+            <div class="compatibility__track"><span id="compatibility-bar"></span></div>
+          </div>
+
+          <dl class="cheat-insights">
+            <div>
+              <dt>雷点侦测</dt>
+              <dd id="trigger-copy">公开否定他的判断</dd>
+            </div>
+            <div>
+              <dt>开心开关</dt>
+              <dd id="delight-copy">先给结论，再给他选择题</dd>
+            </div>
+            <div>
+              <dt>你的打法</dt>
+              <dd id="strategy-copy">给面子、定边界、锁优先级</dd>
+            </div>
+          </dl>
+        </div>
+
+        <p class="cheat-disclaimer">
+          八字仅作为 Demo 的娱乐化角色设定，不用于真实人格、招聘或绩效判断。
+        </p>
+      </aside>
+    </main>
+
+    <section
+      class="mystic-lab"
+      id="mystic-lab"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mystic-title"
+      aria-hidden="true"
+      inert
+      hidden
+    >
+      <div class="mystic-lab__grain" aria-hidden="true"></div>
+      <div class="mystic-ambience" id="mystic-ambience" aria-hidden="true">
+        <div class="mystic-constellation"></div>
+      </div>
+      <div class="mystic-entry" id="mystic-entry" aria-hidden="true" hidden>
+        <div class="mystic-entry__freeze-grid"></div>
+        <div class="mystic-entry__compass">
+          <div class="mystic-entry__rotor mystic-entry__rotor--outer"></div>
+          <div class="mystic-entry__rotor mystic-entry__rotor--middle"></div>
+          <div class="mystic-entry__ring mystic-entry__ring--branches" id="entry-branches"></div>
+          <div class="mystic-entry__ring mystic-entry__ring--stems" id="entry-stems"></div>
+          <div class="mystic-entry__core"><span>命</span><i></i></div>
+        </div>
+        <div class="mystic-entry__phases">
+          <p class="mystic-entry__phase mystic-entry__phase--freeze"><small>TIME SUSPENDED</small><strong>时空静止</strong></p>
+          <p class="mystic-entry__phase mystic-entry__phase--wake"><small>CHART AWAKENING</small><strong>命盘苏醒</strong></p>
+          <p class="mystic-entry__phase mystic-entry__phase--open"><small>REALM UNSEALED</small><strong>推演空间开启</strong></p>
+        </div>
+        <div class="mystic-entry__progress"><span></span></div>
+      </div>
+      <header class="mystic-header">
+        <button class="mystic-close" id="close-mystic-lab" type="button">
+          <span aria-hidden="true">←</span>
+          返回工位开挂局
+        </button>
+
+        <div class="mystic-brand">
+          <span class="mystic-brand__seal" aria-hidden="true">命</span>
+          <div>
+            <small>八字推演 · 动态命盘</small>
+            <h2 id="mystic-title">玄学分析图</h2>
+          </div>
+        </div>
+
+        <div class="model-status" id="model-status" aria-live="polite">
+          <span aria-hidden="true"></span>
+          <div>
+            <small>内容引擎</small>
+            <strong>正在检查 DeepSeek V4</strong>
+          </div>
+        </div>
+      </header>
+
+      <nav class="mystic-steps" aria-label="玄学分析流程">
+        <span class="is-current" data-mystic-step="input"><i>01</i>录入</span>
+        <span data-mystic-step="chart"><i>02</i>流转排盘</span>
+        <span data-mystic-step="analysis"><i>03</i>命理解读</span>
+        <span data-mystic-step="live"><i>04</i>实时加深</span>
+      </nav>
+
+      <div class="mystic-workbench">
+        <form class="birth-form" id="birth-form">
+          <div class="mystic-section-label">
+            <span>01</span>
+            <div>
+              <small>建立分析对象</small>
+              <h3>把基本信息放进来</h3>
+            </div>
+          </div>
+
+          <div class="skill-source-badge">
+            <span>排盘规范</span>
+            <strong>jinchenma94 / bazi-skill</strong>
+          </div>
+
+          <button class="opponent-fill" id="fill-current-opponent" type="button">
+            使用当前职场对象演示资料
+          </button>
+
+          <div class="birth-form__grid">
+            <label>
+              <span>当前姓名 *</span>
+              <input id="birth-name" name="name" autocomplete="off" required />
+            </label>
+            <label>
+              <span>曾用名</span>
+              <input id="birth-former-name" name="former_name" autocomplete="off" placeholder="没有可留空" />
+            </label>
+            <label>
+              <span>生日历法 *</span>
+              <select id="birth-calendar" name="calendar_type" required>
+                <option value="solar">阳历 / 公历</option>
+                <option value="lunar">农历 / 阴历</option>
+              </select>
+            </label>
+            <label>
+              <span id="birth-date-label">阳历生日 *</span>
+              <input id="birth-date" name="birth_date" type="date" required />
+            </label>
+            <label>
+              <span>出生时间精度 *</span>
+              <select id="birth-time-precision" name="time_precision" required>
+                <option value="exact">知道准确时间</option>
+                <option value="approximate">只知道大概时间</option>
+                <option value="unknown">时辰不确定</option>
+              </select>
+            </label>
+            <label>
+              <span>出生时间</span>
+              <input id="birth-time" name="birth_time" type="time" required />
+            </label>
+            <label>
+              <span>性别 *</span>
+              <select id="birth-gender" name="gender" required>
+                <option value="">请选择</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+              </select>
+            </label>
+            <label>
+              <span>在世状态 *</span>
+              <select id="birth-life-status" name="life_status" required>
+                <option value="alive">在世</option>
+                <option value="deceased">已故</option>
+              </select>
+            </label>
+            <label class="birth-form__place">
+              <span>出生地点 *</span>
+              <input
+                id="birth-place"
+                name="birth_place"
+                placeholder="例如：广东省深圳市"
+                autocomplete="off"
+                required
+              />
+            </label>
+            <label id="death-year-field" hidden>
+              <span>去世年份</span>
+              <input id="birth-death-year" name="death_year" inputmode="numeric" maxlength="4" placeholder="例如：2020" />
+            </label>
+            <label class="leap-month-field" id="leap-month-field" hidden>
+              <input id="birth-leap-month" name="leap_month" type="checkbox" />
+              <span>该农历月份是闰月</span>
+            </label>
+          </div>
+
+          <div class="skill-confirmation">
+            <strong>提交即确认以下排盘口径</strong>
+            <span>立春定年柱 · 节气定月柱 · 23:00 后按夜子时 · 性别决定大运顺逆</span>
+          </div>
+
+          <button class="chart-button" id="chart-button" type="submit">
+            <span>确认资料并专业排盘</span>
+            <i aria-hidden="true">排</i>
+          </button>
+
+          <p class="birth-form__note">
+            使用 lunar_python 按节气生成四柱。出生地用于真太阳时边界提醒；时辰不确定时仅展示六字结构。
+          </p>
+        </form>
+
+        <section class="chart-oracle" aria-labelledby="chart-title">
+          <div class="analysis-object-chip">
+            <span>当前分析对象</span>
+            <strong id="analysis-object-name">等待录入</strong>
+          </div>
+          <div class="mystic-section-label mystic-section-label--light">
+            <span>02</span>
+            <div>
+              <small>信息确认与历法换算</small>
+              <h3 id="chart-title">等待资料确认</h3>
+            </div>
+          </div>
+
+          <div class="oracle-stage" id="oracle-stage" aria-live="polite">
+            <div class="oracle-aura" aria-hidden="true"></div>
+            <div class="oracle-crosshair" aria-hidden="true"></div>
+            <div class="oracle-orbit-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="oracle-ring oracle-ring--outer" data-oracle-ring="branches"></div>
+            <div class="oracle-ring oracle-ring--middle" data-oracle-ring="stems"></div>
+            <div class="oracle-ring oracle-ring--inner" aria-hidden="true"></div>
+            <div class="oracle-core" aria-hidden="true">
+              <span>待</span>
+            </div>
+            <p class="oracle-message" id="oracle-message">录入资料后，命盘会开始流转。</p>
+          </div>
+
+          <div class="chart-pillars" id="chart-pillars" aria-label="四柱排盘摘要"></div>
+          <div class="chart-progress" aria-hidden="true"><span id="chart-progress"></span></div>
+          <p class="chart-status" id="chart-status" role="status">等待开始</p>
+          <ul class="skill-ready-list">
+            <li><span>01</span>双历转换与节气月柱</li>
+            <li><span>02</span>日主、十神与地支藏干</li>
+            <li><span>03</span>五行表层分布与大运顺逆</li>
+            <li><span>04</span>传统命理结构 → 职场沟通翻译</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="mystic-results" id="mystic-results" hidden>
+        <section class="professional-chart" aria-labelledby="professional-chart-title">
+          <header>
+            <div>
+              <span>03 · 四柱命盘</span>
+              <h3 id="professional-chart-title"><strong id="skill-chart-name">对方</strong> 的专业排盘</h3>
+            </div>
+            <div class="calendar-proof">
+              <small id="skill-solar-date">阳历：—</small>
+              <small id="skill-lunar-date">农历：—</small>
+            </div>
+          </header>
+
+          <div class="professional-chart__body">
+            <div class="pillar-table-wrap">
+              <table class="skill-pillar-table" id="skill-pillar-table">
+                <caption>四柱、十神与藏干</caption>
+              </table>
+            </div>
+
+            <aside class="chart-diagnostics">
+              <div class="day-master-card">
+                <span>日主</span>
+                <strong id="skill-day-master">—</strong>
+                <small id="skill-strength">等待分析</small>
+              </div>
+              <div>
+                <span class="diagnostic-label">格局观察</span>
+                <strong id="skill-pattern">—</strong>
+              </div>
+              <div>
+                <span class="diagnostic-label">大运方向</span>
+                <strong id="skill-yun-direction">—</strong>
+                <small id="skill-yun-start">—</small>
+              </div>
+            </aside>
+          </div>
+
+          <div class="element-and-dayun">
+            <section>
+              <header><span>五行表层分布</span><small>含明干与藏干权重，不等同于旺衰</small></header>
+              <div class="element-balance" id="element-balance"></div>
+            </section>
+            <section>
+              <header><span>大运序列</span><small>每步十年</small></header>
+              <div class="dayun-track" id="dayun-track"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="classical-analysis">
+          <article>
+            <span>日主旺衰</span>
+            <p id="skill-day-master-analysis"></p>
+          </article>
+          <article>
+            <span>喜用与忌神</span>
+            <ul class="element-tags element-tags--good" id="skill-favorable"></ul>
+            <ul class="element-tags element-tags--avoid" id="skill-unfavorable"></ul>
+          </article>
+          <article>
+            <span>典籍依据</span>
+            <p id="skill-classic-reference"></p>
+          </article>
+        </section>
+
+        <header class="mystic-results__header">
+          <div>
+            <span>04 · 职场沟通翻译</span>
+            <h3><strong id="profile-name">对方</strong> 的职场沟通说明书</h3>
+          </div>
+          <p id="profile-summary">正在生成分析摘要……</p>
+        </header>
+
+        <div class="insight-grid">
+          <article class="insight-card insight-card--personality">
+            <span>性格底色</span>
+            <h4>他通常怎样做决定</h4>
+            <p id="profile-personality"></p>
+          </article>
+          <article class="insight-card insight-card--likes">
+            <span>喜欢什么</span>
+            <h4>顺毛按钮</h4>
+            <ul id="profile-likes"></ul>
+          </article>
+          <article class="insight-card insight-card--fears">
+            <span>怕什么</span>
+            <h4>高危雷区</h4>
+            <ul id="profile-fears"></ul>
+          </article>
+          <article class="insight-card insight-card--topics">
+            <span>聊什么</span>
+            <h4>更容易打开的话题</h4>
+            <ul id="profile-topics"></ul>
+          </article>
+          <article class="insight-card insight-card--advice">
+            <span>怎样说</span>
+            <h4>后续聊天策略</h4>
+            <p id="profile-advice"></p>
+            <blockquote id="profile-script"></blockquote>
+          </article>
+        </div>
+
+        <div class="live-analysis-section">
+          <section class="live-radar" aria-labelledby="live-radar-title">
+            <header>
+              <div>
+                <span>04 · 实时加深</span>
+                <h3 id="live-radar-title">聊天观察雷达</h3>
+              </div>
+              <button id="refresh-live-analysis" type="button">基于当前聊天刷新</button>
+            </header>
+
+            <div class="live-transcript" id="live-transcript"></div>
+
+            <form class="live-chat-form" id="live-chat-form">
+              <label for="live-message">补充刚刚发生的一句话</label>
+              <div>
+                <input
+                  id="live-message"
+                  placeholder="例如：对方说“这不是早就说过了吗？”"
+                  autocomplete="off"
+                />
+                <button type="submit">加入并分析</button>
+              </div>
+            </form>
+
+            <div class="live-conclusion">
+              <div class="live-conclusion__status">
+                <span id="live-analysis-status">等待当前命盘完成</span>
+                <i aria-hidden="true"></i>
+              </div>
+              <ul id="live-signals"></ul>
+              <p id="live-deepening"></p>
+              <blockquote id="live-suggested-line"></blockquote>
+            </div>
+          </section>
+        </div>
+
+        <p class="mystic-disclaimer">
+          本功能把八字作为娱乐化沟通线索，不应据此判断真实人格、录用、绩效或重大关系决策。聊天内容发送给模型前应获得必要授权并避免粘贴敏感信息。
+        </p>
+      </section>
+
+    </section>
+
+    <footer class="page-footer">
+      <span>工位开挂局 · 原型 01</span>
+      <p>把“你行你上”，翻译成一条真的能发出去的消息。</p>
+      <span>仅供职场沟通演示</span>
+    </footer>
+
+    <noscript>
+      <p class="noscript-message">请启用 JavaScript 以体验职场对话拆招 Demo。</p>
+    </noscript>
+
+    <script src="./script.js" defer></script>
+  </body>
+</html>

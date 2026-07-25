@@ -1,0 +1,36 @@
+[Unit]
+Description=Jasper Workplace Bazi Demo
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=stf-demo
+Group=stf-demo
+WorkingDirectory=/srv/stf
+EnvironmentFile=/etc/stf/stf.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/srv/stf/.venv/bin/python /srv/stf/server.py
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=384M
+
+[Install]
+WantedBy=multi-user.target
