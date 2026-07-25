@@ -1,6 +1,7 @@
 import json
 import threading
 import unittest
+import urllib.error
 import urllib.request
 from functools import partial
 from unittest.mock import patch
@@ -187,6 +188,13 @@ class StreamingApiTests(unittest.TestCase):
         self.assertTrue(payload["deepseek_configured"])
         self.assertNotIn("api_key", payload)
         self.assertNotIn("secret-test-value", json.dumps(payload))
+
+    def test_server_source_is_not_public(self):
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            urllib.request.urlopen(
+                f"http://127.0.0.1:{self.port}/server.py", timeout=3
+            )
+        self.assertEqual(caught.exception.code, 404)
 
     def test_mac_keychain_can_supply_api_key(self):
         completed = server.subprocess.CompletedProcess(

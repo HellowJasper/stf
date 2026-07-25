@@ -30,6 +30,7 @@ DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.co
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")
 DEEPSEEK_KEYCHAIN_SERVICE = "stf-deepseek-api-key"
 DEEPSEEK_KEYCHAIN_ACCOUNT = "stf-demo"
+PUBLIC_STATIC_PATHS = frozenset({"/", "/index.html", "/styles.css", "/script.js"})
 
 HEAVENLY_STEMS = "甲乙丙丁戊己庚辛壬癸"
 EARTHLY_BRANCHES = "子丑寅卯辰巳午未申酉戌亥"
@@ -861,10 +862,11 @@ class DemoRequestHandler(SimpleHTTPRequestHandler):
             return None
 
     def do_GET(self) -> None:  # noqa: N802 - http.server API naming
-        if self.path == "/api/health":
+        request_path = self.path.partition("?")[0]
+        if request_path == "/api/health":
             self._send_json(200, {"ok": True, "service": "workplace-cheat-demo"})
             return
-        if self.path == "/api/config":
+        if request_path == "/api/config":
             self._send_json(
                 200,
                 {
@@ -873,7 +875,17 @@ class DemoRequestHandler(SimpleHTTPRequestHandler):
                 },
             )
             return
-        super().do_GET()
+        if request_path in PUBLIC_STATIC_PATHS:
+            super().do_GET()
+            return
+        self._send_json(404, {"error": "not_found"})
+
+    def do_HEAD(self) -> None:  # noqa: N802 - http.server API naming
+        request_path = self.path.partition("?")[0]
+        if request_path in PUBLIC_STATIC_PATHS:
+            super().do_HEAD()
+            return
+        self.send_error(404, "Not found")
 
     def do_POST(self) -> None:  # noqa: N802 - http.server API naming
         if self.path not in {
