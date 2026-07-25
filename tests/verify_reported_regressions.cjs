@@ -66,6 +66,18 @@ function turnEvents(index) {
     await page.goto(target, { waitUntil: "networkidle" });
     await page.locator("#boot-skip").click();
 
+    const mysticEntry = page.locator("#open-mystic-lab");
+    const mysticEntryBox = await mysticEntry.boundingBox();
+    const mysticEntryText = await mysticEntry.textContent();
+    assert(
+      mysticEntryBox && mysticEntryBox.width >= 250 && mysticEntryBox.height >= 90,
+      "可选增益仍是难以发现的小型入口",
+    );
+    assert(
+      mysticEntryText.includes("进入玄学分析图") && mysticEntryText.includes("点击进入"),
+      "可选增益入口没有明确说明可以进入独立分析界面",
+    );
+
     await page.evaluate(() => {
       const calendar = document.querySelector("#birth-calendar");
       calendar.value = "lunar";
@@ -101,6 +113,27 @@ function turnEvents(index) {
     assert(
       requests[1].recent_messages.some((item) => item.text === firstMessage),
       "第二轮请求没有携带第一轮上下文",
+    );
+
+    const analysisBeforeCheat = await page.locator("#analysis-card").innerText();
+    const modeBeforeCheat = await page.locator("#analysis-mode").textContent();
+    await page.locator("#cheat-switch").click();
+    await page.waitForFunction(
+      () => document.querySelector("#cheat-switch").getAttribute("aria-checked") === "true",
+      null,
+      { timeout: 4000 },
+    );
+    assert(
+      await page.locator("#analysis-card").innerText() === analysisBeforeCheat,
+      "开启八字外挂后，上一轮公开分析摘要被延迟篡改",
+    );
+    assert(
+      await page.locator("#analysis-mode").textContent() === modeBeforeCheat,
+      "开启八字外挂后，上一轮分析标签被提前改成八字结果",
+    );
+    assert(
+      (await page.locator("#composer-status").textContent()).includes("下一条"),
+      "外挂开启后没有明确提示仅作用于下一轮",
     );
 
     assert(failures.length === 0, failures.join("；"));

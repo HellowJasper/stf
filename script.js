@@ -123,6 +123,7 @@ const thinkingCard = document.querySelector("#thinking-card");
 const thinkingSeconds = document.querySelector("#thinking-seconds");
 const thinkingLine = document.querySelector("#thinking-line");
 const analysisCard = document.querySelector("#analysis-card");
+const analysisRound = document.querySelector("#analysis-round");
 const analysisMode = document.querySelector("#analysis-mode");
 const analysisSteps = document.querySelector("#analysis-steps");
 const characterProfile = document.querySelector("#character-profile");
@@ -167,6 +168,7 @@ const patienceLedgerList = document.querySelector("#patience-ledger-list");
 const patienceLedgerEmpty = document.querySelector("#patience-ledger-empty");
 const resetPatienceButton = document.querySelector("#reset-patience");
 const patienceToast = document.querySelector("#patience-toast");
+const composerTurnLabel = document.querySelector("#composer-turn-label");
 const cheatConsole = document.querySelector(".cheat-console");
 const cheatSwitch = document.querySelector("#cheat-switch");
 const baziLockTitle = document.querySelector("#bazi-lock-title");
@@ -551,6 +553,19 @@ function clearGeneratedConversation({ preserveMessages = false } = {}) {
   composerStatus.textContent = "";
 }
 
+function updateConversationRoundUI(key = activeScenario) {
+  const completedTurns = conversationHistory[key].length;
+  const nextRound = completedTurns + 1;
+  composerTurnLabel.textContent = completedTurns
+    ? `继续第 ${nextRound} 轮：这句话，你准备直接发给对方`
+    : "这句话，你准备直接发给对方";
+  if (!isProcessing) {
+    sendButton.querySelector("span").textContent = completedTurns
+      ? `继续第 ${nextRound} 轮`
+      : "发送给对方";
+  }
+}
+
 function renderScenario(key) {
   if (!scenarios[key]) return;
 
@@ -563,7 +578,6 @@ function renderScenario(key) {
   }
   isProcessing = false;
   sendButton.disabled = false;
-  sendButton.querySelector("span").textContent = "发送给对方";
   activeScenario = key;
   const scenario = scenarios[key];
 
@@ -584,6 +598,7 @@ function renderScenario(key) {
   renderBaziProfile();
   clearGeneratedConversation();
   renderConversationHistory(key);
+  updateConversationRoundUI(key);
   updateChatRewindUI();
   if (scenarioChanged) {
     composerStatus.textContent = "已进入新场景：八字外挂默认关闭，需要时请手动开启。";
@@ -624,7 +639,6 @@ function setCheatEnabled(nextEnabled, { silent = false } = {}) {
   cheatSwitch.setAttribute("aria-checked", String(cheatEnabled));
   cheatSwitch.querySelector("strong").textContent = cheatEnabled ? "已开启" : "未开启";
   baziProfile.setAttribute("aria-hidden", String(!cheatEnabled));
-  analysisMode.textContent = cheatEnabled ? "八字外挂已叠加" : "基础拆招";
   renderBaziProfile();
   updateChatRewindUI();
 
@@ -701,6 +715,7 @@ async function startChatRewind() {
 
   clearGeneratedConversation();
   renderConversationHistory(activeScenario);
+  updateConversationRoundUI();
   userMessage.value = node.rewrite || node.user;
   conversationStage.classList.remove("is-rewinding");
   updateChatRewindUI();
@@ -796,6 +811,15 @@ function showCoachWait(event) {
   thinkingCard.hidden = false;
   thinkingCard.classList.remove("is-counting");
   thinkingCard.classList.add("is-coaching");
+  if (event.stage === "opponent") {
+    const round = Number(event.conversation_round) || (conversationHistory[activeScenario].length + 1);
+    thinkingSeconds.textContent = `第 ${round} 轮生成中`;
+    thinkingLine.textContent = event.bazi_enabled
+      ? "随机等待已结束，DeepSeek 正在承接历史并完成八字校准；本轮只会展示一套最终结果……"
+      : "随机等待已结束，DeepSeek 正在读取前文并生成本轮真实回应；不会先塞固定模板……";
+    scrollChatToBottom();
+    return;
+  }
   thinkingSeconds.textContent = event.bazi_enabled ? "命盘校准中" : "人物建模中";
   thinkingLine.textContent = event.bazi_enabled
     ? "对方已经回话，AI 正在把本轮证据与日主、月令、十神一起复盘……"
@@ -808,6 +832,8 @@ function beginAnalysis(event) {
   thinkingCard.hidden = true;
   thinkingCard.classList.remove("is-coaching");
   analysisCard.hidden = false;
+  const round = Number(event.conversation_round) || (conversationHistory[activeScenario].length + 1);
+  analysisRound.textContent = `第 ${round} 轮 · 公开分析摘要`;
   analysisMode.textContent = event.mode;
   replyTone.textContent = event.tone;
   satisfactionScore.textContent = event.satisfaction;
@@ -931,7 +957,6 @@ function handleStreamEvent(event) {
       copyReply.disabled = false;
       satisfactionMeter.style.width = `${event.satisfaction}%`;
       workMeter.style.width = `${event.work}%`;
-      composerStatus.textContent = "拆招完成。可以复制，也可以换个场景继续爽。";
       if (pendingTurn) {
         applyPatienceChange(
           event.patience_delta,
@@ -949,7 +974,10 @@ function handleStreamEvent(event) {
         };
         conversationHistory[pendingTurn.scenario].push(turnNode);
         latestTurnByScenario[pendingTurn.scenario] = turnNode;
+        const completedRound = conversationHistory[pendingTurn.scenario].length;
+        composerStatus.textContent = `第 ${completedRound} 轮拆招完成；可以继续追问，对方会承接前文。`;
         pendingTurn = null;
+        updateConversationRoundUI();
         updateChatRewindUI();
         if (!mysticLab.hidden) {
           renderLiveTranscript();
@@ -1039,7 +1067,7 @@ async function submitMessage(event) {
   } finally {
     isProcessing = false;
     sendButton.disabled = false;
-    sendButton.querySelector("span").textContent = "再发一句";
+    updateConversationRoundUI();
     updateChatRewindUI();
   }
 }

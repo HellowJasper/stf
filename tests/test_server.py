@@ -16,6 +16,129 @@ class ResponseLogicTests(unittest.TestCase):
             self.assertGreaterEqual(delay, 1.0)
             self.assertLessEqual(delay, 3.0)
 
+    def test_source_decision_buffers_tokens_until_random_reveal(self):
+        class Clock:
+            now = 0.0
+
+            def __call__(self):
+                return self.now
+
+            def sleep(self, duration):
+                self.now += duration
+
+        class ScheduledQueue:
+            def __init__(self, clock, items):
+                self.clock = clock
+                self.items = list(items)
+
+            def get_nowait(self):
+                if self.items and self.items[0][0] <= self.clock.now:
+                    return self.items.pop(0)[1]
+                raise server.Empty
+
+            def get(self, timeout):
+                available_at, item = self.items[0]
+                if available_at <= self.clock.now + timeout:
+                    self.clock.now = available_at
+                    self.items.pop(0)
+                    return item
+                self.clock.now += timeout
+                raise server.Empty
+
+        clock = Clock()
+        queued = ScheduledQueue(
+            clock,
+            [(0.2, ("token", "A 已交付。")), (0.3, ("done", ""))],
+        )
+
+        decision = server.await_opponent_source(
+            queued,
+            stream_enabled=True,
+            started_at=0.0,
+            reveal_delay=1.5,
+            clock=clock,
+            sleeper=clock.sleep,
+        )
+
+        self.assertEqual(clock.now, 1.5)
+        self.assertEqual(decision["source"], "deepseek-v4")
+        self.assertEqual(decision["tokens"], ["A 已交付。"])
+
+    def test_source_decision_uses_fallback_at_absolute_three_second_deadline(self):
+        class Clock:
+            now = 0.0
+
+            def __call__(self):
+                return self.now
+
+            def sleep(self, duration):
+                self.now += duration
+
+        class LateQueue:
+            def __init__(self, clock):
+                self.clock = clock
+
+            def get_nowait(self):
+                raise server.Empty
+
+            def get(self, timeout):
+                self.clock.now += timeout
+                raise server.Empty
+
+        clock = Clock()
+        decision = server.await_opponent_source(
+            LateQueue(clock),
+            stream_enabled=True,
+            started_at=0.0,
+            reveal_delay=1.25,
+            source_deadline_seconds=3.0,
+            clock=clock,
+            sleeper=clock.sleep,
+        )
+
+        self.assertEqual(clock.now, 3.0)
+        self.assertEqual(decision["source"], "demo-fallback")
+        self.assertEqual(decision["tokens"], [])
+
+    def test_whitespace_token_does_not_commit_ai_source(self):
+        class Clock:
+            now = 0.0
+
+            def __call__(self):
+                return self.now
+
+            def sleep(self, duration):
+                self.now += duration
+
+        class WhitespaceQueue:
+            def __init__(self, clock):
+                self.clock = clock
+                self.drained = False
+
+            def get_nowait(self):
+                if not self.drained:
+                    self.drained = True
+                    return ("token", "   ")
+                raise server.Empty
+
+            def get(self, timeout):
+                self.clock.now += timeout
+                raise server.Empty
+
+        clock = Clock()
+        decision = server.await_opponent_source(
+            WhitespaceQueue(clock),
+            stream_enabled=True,
+            started_at=0.0,
+            reveal_delay=1.0,
+            source_deadline_seconds=3.0,
+            clock=clock,
+            sleeper=clock.sleep,
+        )
+
+        self.assertEqual(decision["source"], "demo-fallback")
+        self.assertEqual(clock.now, 3.0)
+
     def test_cheat_mode_changes_the_response(self):
         normal = server.build_response("boss", False)
         cheat = server.build_response("boss", True)
@@ -36,6 +159,20 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertNotEqual(boundary["opponent_reply"], confrontational["opponent_reply"])
         self.assertEqual(boundary["reaction"], "开始拍板")
         self.assertEqual(confrontational["reaction"], "态度反弹")
+
+    def test_local_fallback_varies_wording_without_changing_scenario_facts(self):
+        with patch("server.random.choice", side_effect=lambda values: values[0]):
+            first = server.build_conversation_turn(
+                "boss", False, "请确认 A、B、C 的优先级。"
+            )
+        with patch("server.random.choice", side_effect=lambda values: values[1]):
+            second = server.build_conversation_turn(
+                "boss", False, "请确认 A、B、C 的优先级。"
+            )
+
+        self.assertNotEqual(first["opponent_reply"], second["opponent_reply"])
+        self.assertIn("先把 A 做完", first["opponent_reply"])
+        self.assertIn("先把 A 做完", second["opponent_reply"])
 
     def test_bazi_changes_core_public_analysis_and_reply(self):
         normal = server.build_conversation_turn("hostile", False, "我们按群里的记录确认。")
@@ -81,7 +218,11 @@ class ResponseLogicTests(unittest.TestCase):
                     "trigger": "公开否定",
                     "delight": "保留拍板权",
                 },
-                [{"role": "opponent", "text": "今晚给我。"}],
+                [
+                    {"role": "opponent", "text": "今晚给我。"},
+                    {"role": "me", "text": "今晚先交 A，请您确认。"},
+                    {"role": "opponent", "text": "行，先交 A。"},
+                ],
             )
 
         sent_data = deepseek.call_args.args[1]
@@ -96,11 +237,184 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertEqual(sent_data["bazi_profile"]["trigger"], "公开否定")
         self.assertEqual(sent_data["professional_bazi"]["pillars"][0]["ganzhi"], "乙丑")
         self.assertEqual(deepseek.call_args.kwargs["max_tokens"], 700)
+        self.assertEqual(deepseek.call_args.kwargs["temperature"], 0.9)
+        self.assertEqual(
+            deepseek.call_args.kwargs["conversation_messages"],
+            [
+                {"role": "assistant", "content": "今晚给我。"},
+                {"role": "user", "content": "今晚先交 A，请您确认。"},
+                {"role": "assistant", "content": "行，先交 A。"},
+                {"role": "user", "content": "我可以接，但需要确认优先级。"},
+            ],
+        )
         self.assertIn("承接上一轮", deepseek.call_args.args[0])
         self.assertEqual(
             sent_data["recent_messages"],
-            [{"role": "opponent", "text": "今晚给我。"}],
+            [
+                {"role": "opponent", "text": "今晚给我。"},
+                {"role": "me", "text": "今晚先交 A，请您确认。"},
+                {"role": "opponent", "text": "行，先交 A。"},
+            ],
         )
+
+    def test_deepseek_request_uses_role_history_and_temperature(self):
+        captured = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return b'{"choices":[{"message":{"content":"{\\"ok\\":true}"}}]}'
+
+        def fake_urlopen(request, timeout):
+            captured["timeout"] = timeout
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse()
+
+        with patch("server.get_deepseek_api_key", return_value="test-key"), patch(
+            "server.urllib.request.urlopen", side_effect=fake_urlopen
+        ):
+            result = server.call_deepseek_json(
+                "只输出 JSON。",
+                {"scenario": "boss", "user_message": "继续确认 B。"},
+                conversation_messages=[
+                    {"role": "assistant", "content": "先交 A。"},
+                    {"role": "user", "content": "A 已交付。"},
+                    {"role": "assistant", "content": "继续说 B。"},
+                    {"role": "user", "content": "B 明早十一点交。"},
+                ],
+                temperature=0.9,
+                timeout=10,
+            )
+
+        body = captured["body"]
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(captured["timeout"], 10)
+        self.assertEqual(body["temperature"], 0.9)
+        self.assertEqual(
+            [message["role"] for message in body["messages"]],
+            ["system", "assistant", "user", "assistant", "user"],
+        )
+        self.assertEqual(body["messages"][1]["content"], "先交 A。")
+        self.assertTrue(body["messages"][-1]["content"].startswith("B 明早十一点交。"))
+        self.assertIn('"user_message": "继续确认 B。"', body["messages"][-1]["content"])
+
+    def test_deepseek_text_stream_relays_only_sse_content_deltas(self):
+        captured = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def __iter__(self):
+                return iter(
+                    [
+                        b": keep-alive\n",
+                        b"\n",
+                        b'data: {"choices":[{"delta":{"content":"A \\u5df2"}}]}\n',
+                        b'data: {"choices":[{"delta":{"content":"\\u4ea4\\u4ed8"}}]}\n',
+                        b'data: {"choices":[]}\n',
+                        b"data: [DONE]\n",
+                    ]
+                )
+
+        def fake_urlopen(request, timeout):
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            captured["accept"] = request.headers.get("Accept")
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        with patch("server.get_deepseek_api_key", return_value="test-key"), patch(
+            "server.urllib.request.urlopen", side_effect=fake_urlopen
+        ):
+            chunks = list(
+                server.iter_deepseek_text(
+                    "只输出一句话。",
+                    {"user_message": "继续。"},
+                    timeout=8,
+                    temperature=0.9,
+                )
+            )
+
+        self.assertEqual(chunks, ["A 已", "交付"])
+        self.assertTrue(captured["body"]["stream"])
+        self.assertNotIn("response_format", captured["body"])
+        self.assertEqual(captured["body"]["temperature"], 0.9)
+        self.assertEqual(captured["accept"], "text/event-stream")
+
+    def test_opponent_stream_request_includes_scene_surface_variation(self):
+        captured = {}
+
+        def fake_stream(system_prompt, user_data, **kwargs):
+            captured["system_prompt"] = system_prompt
+            captured["user_data"] = user_data
+            captured["kwargs"] = kwargs
+            return iter(["收到，A 已交付；现在确认 B 的时间点。"])
+
+        with patch("server.iter_deepseek_text", side_effect=fake_stream):
+            chunks = list(
+                server.iter_workplace_opponent_reply(
+                    "boss",
+                    False,
+                    "A 已交付，现在确认 B。",
+                    recent_messages=[
+                        {"role": "opponent", "text": "先交 A。"},
+                        {"role": "me", "text": "A 已经交付。"},
+                    ],
+                )
+            )
+
+        variation = captured["user_data"]["surface_variation"]
+        self.assertEqual(chunks, ["收到，A 已交付；现在确认 B 的时间点。"])
+        self.assertIn(variation, server.WORKPLACE_SURFACE_VARIATIONS["boss"])
+        self.assertEqual(captured["kwargs"]["temperature"], 0.9)
+        self.assertNotIn("opponent_reply", captured["system_prompt"])
+
+    def test_analysis_uses_streamed_opponent_reply_verbatim(self):
+        authoritative = "A 我收到了，B 请在明早十点前给我。"
+        generated = {
+            "reaction_tag": "继续拍板",
+            "opponent_reply": "模型不应有权改写这句话",
+            "character_profile": {
+                "observed_tendency": "确认完成项后继续追下一节点。",
+                "current_need": "锁定 B 的交付时间。",
+                "communication_habit": "按节点推进。",
+                "traits": ["结果优先", "节点推进", "时间明确"],
+            },
+            "public_analysis": ["确认 A 已完成。", "继续追问 B。", "需要锁定截止时间。"],
+            "suggested_next_message": "收到，B 明早十点前提交，若有变化我提前同步。",
+            "bazi_communication": "",
+            "tone": "继续推进",
+            "satisfaction": 88,
+            "work_progress": 90,
+            "outcome": "对话已进入 B 的交付确认。",
+        }
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ) as deepseek:
+            result = server.generate_workplace_analysis(
+                "boss",
+                False,
+                "A 已交付，请确认 B。",
+                authoritative,
+                recent_messages=[
+                    {"role": "opponent", "text": "先做 A。"},
+                    {"role": "me", "text": "A 已经交付。"},
+                ],
+            )
+
+        sent_data = deepseek.call_args.args[1]
+        self.assertEqual(sent_data["authoritative_opponent_reply"], authoritative)
+        self.assertEqual(result["opponent_reply"], authoritative)
+        self.assertIn(authoritative, result["character_profile"]["evidence"])
+        self.assertNotIn("opponent_reply 字符串", deepseek.call_args.args[0])
 
     def test_main_chat_bazi_uses_real_calendar_chart(self):
         normal = server.build_conversation_turn(
@@ -130,6 +444,26 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertEqual(result["source"], "demo-fallback")
         self.assertIn("timeout", result["warning"])
         self.assertEqual(len(result["analysis"]), 4)
+
+    def test_fallback_continues_previous_turn_instead_of_restarting(self):
+        history = [
+            {"role": "opponent", "text": "这点小事为什么还没做完？今晚给我。"},
+            {"role": "me", "text": "今晚我先交 A，B、C 明早再排，请您确认。"},
+            {"role": "opponent", "text": "行，先把 A 做完。"},
+        ]
+        with patch.dict(
+            "server.os.environ", {"DEEPSEEK_DISABLE_KEYCHAIN": "1"}, clear=True
+        ):
+            result = server.generate_workplace_turn(
+                "boss",
+                False,
+                "延续刚才：A 已经交付。现在只剩 B 和 C，请二选一。",
+                recent_messages=history,
+            )
+
+        self.assertNotIn("先把 A 做完", result["opponent_reply"])
+        self.assertIn("A 已经交付", result["opponent_reply"])
+        self.assertIn("第 2 轮", result["analysis"][0])
 
     def test_patience_change_is_scenario_style_and_cheat_aware(self):
         friendly = server.build_conversation_turn(
@@ -339,6 +673,184 @@ class StreamingApiTests(unittest.TestCase):
         self.assertLess(event_types.index("opponent_start"), event_types.index("analysis_start"))
         self.assertLess(event_types.index("analysis_start"), event_types.index("character_profile"))
 
+    def test_streamed_ai_reply_is_analysis_authority_and_analysis_starts_once(self):
+        history = [
+            {"role": "opponent", "text": "今晚给我。"},
+            {"role": "me", "text": "我今晚先交 A。"},
+            {"role": "opponent", "text": "行，先交 A。"},
+        ]
+        authoritative = "A 我收到了， 继续说 B 的时间点。"
+        analysis_inputs = []
+
+        def fake_opponent_stream(*_args, **_kwargs):
+            yield "A 我收到了， "
+            yield "继续说 B 的时间点。"
+
+        def fake_analysis(
+            scenario,
+            bazi_enabled,
+            message,
+            authoritative_opponent_reply,
+            bazi_profile,
+            recent_messages,
+        ):
+            analysis_inputs.append(authoritative_opponent_reply)
+            return {
+                **server.build_contextual_conversation_turn(
+                    scenario, bazi_enabled, message, recent_messages
+                ),
+                "opponent_reply": authoritative_opponent_reply,
+                "source": "deepseek-v4",
+                "analysis_source": "deepseek-v4",
+                "warning": "",
+            }
+
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/respond",
+            data=json.dumps(
+                {
+                    "scenario": "boss",
+                    "bazi_enabled": False,
+                    "message": "A 已交付，现在请确认 B。",
+                    "recent_messages": history,
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        with patch("server.random_think_delay", return_value=0), patch(
+            "server.deepseek_is_configured", return_value=True
+        ), patch(
+            "server.iter_workplace_opponent_reply", side_effect=fake_opponent_stream
+        ), patch(
+            "server.generate_workplace_analysis", side_effect=fake_analysis
+        ):
+            with urllib.request.urlopen(request, timeout=3) as response:
+                events = [json.loads(line) for line in response if line.strip()]
+
+        opponent_start = next(event for event in events if event["type"] == "opponent_start")
+        opponent_text = "".join(
+            event["text"] for event in events if event["type"] == "opponent_delta"
+        )
+        done = events[-1]
+        self.assertEqual(opponent_start["source"], "deepseek-v4")
+        self.assertEqual(done["source"], "deepseek-v4")
+        self.assertEqual(opponent_text, authoritative)
+        self.assertEqual(analysis_inputs, [authoritative])
+        self.assertEqual(
+            sum(event["type"] == "analysis_start" for event in events), 1
+        )
+
+    def test_fallback_commit_never_calls_ai_analysis_or_switches_source(self):
+        def whitespace_stream(*_args, **_kwargs):
+            yield "   "
+
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/respond",
+            data=json.dumps(
+                {
+                    "scenario": "boss",
+                    "bazi_enabled": False,
+                    "message": "A 已交付，请确认 B。",
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        with patch("server.random_think_delay", return_value=0), patch(
+            "server.WORKPLACE_SOURCE_DEADLINE", 0
+        ), patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.iter_workplace_opponent_reply", side_effect=whitespace_stream
+        ), patch("server.generate_workplace_analysis") as analysis:
+            with urllib.request.urlopen(request, timeout=3) as response:
+                events = [json.loads(line) for line in response if line.strip()]
+
+        self.assertFalse(analysis.called)
+        source_events = [
+            event["source"]
+            for event in events
+            if event["type"] in {"opponent_start", "character_profile", "done"}
+        ]
+        self.assertTrue(source_events)
+        self.assertEqual(set(source_events), {"demo-fallback"})
+        self.assertEqual(
+            sum(event["type"] == "analysis_start" for event in events), 1
+        )
+
+    def test_partial_ai_stream_failure_keeps_displayed_reply_authoritative(self):
+        partial_reply = "A 已收到，"
+        analysed = []
+
+        def failing_stream(*_args, **_kwargs):
+            yield partial_reply
+            raise RuntimeError("connection interrupted")
+
+        def fake_analysis(
+            scenario,
+            bazi_enabled,
+            message,
+            authoritative_opponent_reply,
+            bazi_profile,
+            recent_messages,
+        ):
+            analysed.append(authoritative_opponent_reply)
+            return {
+                **server.build_contextual_conversation_turn(
+                    scenario, bazi_enabled, message, recent_messages
+                ),
+                "opponent_reply": authoritative_opponent_reply,
+                "source": "deepseek-v4",
+                "analysis_source": "demo-fallback",
+                "warning": "",
+            }
+
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/respond",
+            data=json.dumps(
+                {
+                    "scenario": "boss",
+                    "bazi_enabled": False,
+                    "message": "A 已交付，请确认 B。",
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        with patch("server.random_think_delay", return_value=0), patch(
+            "server.deepseek_is_configured", return_value=True
+        ), patch(
+            "server.iter_workplace_opponent_reply", side_effect=failing_stream
+        ), patch(
+            "server.generate_workplace_analysis", side_effect=fake_analysis
+        ):
+            with urllib.request.urlopen(request, timeout=3) as response:
+                events = [json.loads(line) for line in response if line.strip()]
+
+        opponent_text = "".join(
+            event["text"] for event in events if event["type"] == "opponent_delta"
+        )
+        self.assertEqual(opponent_text, partial_reply)
+        self.assertEqual(analysed, [partial_reply])
+        self.assertEqual(
+            {
+                event["source"]
+                for event in events
+                if event["type"] in {"opponent_start", "done"}
+            },
+            {"deepseek-v4"},
+        )
+        analysis_start = next(
+            event for event in events if event["type"] == "analysis_start"
+        )
+        self.assertEqual(analysis_start["mode"], "基础拆招")
+        character_event = next(
+            event for event in events if event["type"] == "character_profile"
+        )
+        self.assertEqual(character_event["source"], "demo-fallback")
+
     def request_json(self, path, payload=None):
         data = None if payload is None else json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
@@ -364,6 +876,15 @@ class StreamingApiTests(unittest.TestCase):
                 f"http://127.0.0.1:{self.port}/server.py", timeout=3
             )
         self.assertEqual(caught.exception.code, 404)
+
+    def test_versioned_static_assets_disable_browser_cache(self):
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}/script.js?v=regression-test",
+            timeout=3,
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertIn("no-store", response.headers.get("Cache-Control", ""))
+            self.assertEqual(response.headers.get("Pragma"), "no-cache")
 
     def test_roadshow_and_its_assets_are_public(self):
         expected_types = {

@@ -13,7 +13,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ffe600'/%3E%3Cpath d='M13 14h38v36H13z' fill='%23131313'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='28' font-family='sans-serif' font-weight='900' fill='%23ffe600'%3E爽%3C/text%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260726-2" />
   </head>
   <body class="is-booting">
     <section class="boot-screen" id="boot-screen" data-stage="1" aria-label="工位开挂局正在启动" aria-live="polite" aria-atomic="true">
@@ -248,7 +248,7 @@
           <article class="analysis-card" id="analysis-card" hidden>
             <header>
               <div>
-                <span class="analysis-card__eyebrow">公开分析摘要</span>
+                <span class="analysis-card__eyebrow" id="analysis-round">第 1 轮 · 公开分析摘要</span>
                 <h3>对方接招后，AI 再帮你拆局</h3>
               </div>
               <span class="analysis-card__tag" id="analysis-mode">基础拆招</span>
@@ -349,7 +349,7 @@
             </div>
             <button id="chat-rewind-button" type="button" disabled>回到发送前</button>
           </div>
-          <label for="user-message">这句话，你准备直接发给对方</label>
+          <label for="user-message" id="composer-turn-label">这句话，你准备直接发给对方</label>
           <div class="quick-prompts" id="quick-prompts" aria-label="快捷话术"></div>
           <div class="composer__row">
             <textarea
@@ -377,15 +377,7 @@
         <div class="cheat-console__burst" aria-hidden="true">外挂<br />加载区</div>
         <header>
           <div class="cheat-heading">
-            <button
-              class="mystic-open"
-              id="open-mystic-lab"
-              type="button"
-              aria-haspopup="dialog"
-              aria-controls="mystic-lab"
-            >
-              02 · 可选增益 <i aria-hidden="true">↗</i>
-            </button>
+            <span class="cheat-heading__kicker">02 · 可选增益</span>
             <h2 id="cheat-title">八字外挂</h2>
           </div>
           <button
@@ -403,6 +395,26 @@
         <p class="cheat-intro">
           假定已知对方八字，追加“合不合、雷点在哪、怎样顺毛”的娱乐化策略。
         </p>
+
+        <button
+          class="mystic-open"
+          id="open-mystic-lab"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="mystic-lab"
+          aria-describedby="mystic-open-description"
+        >
+          <span class="mystic-open__seal" aria-hidden="true">命</span>
+          <span class="mystic-open__copy">
+            <small>独立空间 · 完整排盘</small>
+            <strong>进入玄学分析图</strong>
+            <em id="mystic-open-description">填写出生信息，查看四柱、五行与沟通侧写</em>
+          </span>
+          <span class="mystic-open__action">
+            <b>点击进入</b>
+            <i aria-hidden="true">→</i>
+          </span>
+        </button>
 
         <div class="bazi-lock" id="bazi-lock" aria-live="polite">
           <span id="bazi-lock-seal" aria-hidden="true">挂</span>
@@ -862,6 +874,6 @@
       <p class="noscript-message">请启用 JavaScript 以体验职场对话拆招 Demo。</p>
     </noscript>
 
-    <script src="./script.js" defer></script>
+    <script src="./script.js?v=20260726-2" defer></script>
   </body>
 </html>
