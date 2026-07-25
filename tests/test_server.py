@@ -96,6 +96,11 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertEqual(sent_data["bazi_profile"]["trigger"], "公开否定")
         self.assertEqual(sent_data["professional_bazi"]["pillars"][0]["ganzhi"], "乙丑")
         self.assertEqual(deepseek.call_args.kwargs["max_tokens"], 700)
+        self.assertIn("承接上一轮", deepseek.call_args.args[0])
+        self.assertEqual(
+            sent_data["recent_messages"],
+            [{"role": "opponent", "text": "今晚给我。"}],
+        )
 
     def test_main_chat_bazi_uses_real_calendar_chart(self):
         normal = server.build_conversation_turn(
@@ -166,6 +171,59 @@ class ResponseLogicTests(unittest.TestCase):
             [item["label"] for item in first["pillars"]], list(server.PILLAR_LABELS)
         )
         self.assertEqual(len(first["yun"]["cycles"]), 8)
+
+    def test_night_zi_uses_next_day_pillar_per_bazi_skill(self):
+        """bazi-skill 约定 23:00–24:00 为晚子时，日柱按次日计算。"""
+
+        chart = server.build_bazi_chart(
+            {
+                "name": "夜子时样例",
+                "gender": "男",
+                "calendar_type": "solar",
+                "birth_date": "1985-06-18",
+                "birth_time": "23:30",
+                "time_precision": "exact",
+                "birth_place": "江苏省南京市",
+            }
+        )
+
+        self.assertEqual(
+            f"{chart['pillars'][2]['stem']}{chart['pillars'][2]['branch']}",
+            "己丑",
+        )
+
+    def test_valid_lunar_date_can_be_converted_and_charted(self):
+        """农历二月三十虽不是有效公历日期，仍必须能提交并完成换算。"""
+
+        chart = server.build_bazi_chart(
+            {
+                "name": "农历样例",
+                "gender": "女",
+                "calendar_type": "lunar",
+                "birth_date": "1981-02-30",
+                "birth_time": "09:30",
+                "time_precision": "exact",
+                "birth_place": "广东省广州市",
+                "leap_month": "false",
+            }
+        )
+
+        self.assertTrue(chart["solar_date"].startswith("1981-04-04"))
+        self.assertEqual(len(chart["pillars"]), 4)
+
+        leap_chart = server.build_bazi_chart(
+            {
+                "name": "闰月样例",
+                "gender": "男",
+                "calendar_type": "lunar",
+                "birth_date": "2020-04-01",
+                "birth_time": "12:00",
+                "time_precision": "exact",
+                "birth_place": "四川省成都市",
+                "leap_month": "true",
+            }
+        )
+        self.assertTrue(leap_chart["solar_date"].startswith("2020-05-23"))
 
     def test_unknown_birth_time_marks_hour_pillar_unknown(self):
         profile = {
@@ -359,6 +417,31 @@ class StreamingApiTests(unittest.TestCase):
         self.assertEqual(len(live["signals"]), 3)
         self.assertIn("四柱", live["bazi_basis"])
         self.assertTrue(all("｜" in signal for signal in live["signals"]))
+
+    def test_mystic_endpoint_accepts_lunar_calendar_profile(self):
+        profile = {
+            "name": "农历样例",
+            "gender": "女",
+            "calendar_type": "lunar",
+            "birth_date": "1981-02-30",
+            "birth_time": "09:30",
+            "time_precision": "exact",
+            "birth_place": "广东省广州市",
+            "leap_month": False,
+        }
+        with patch.dict(
+            "server.os.environ", {"DEEPSEEK_DISABLE_KEYCHAIN": "1"}, clear=True
+        ):
+            status, payload = self.request_json(
+                "/api/mystic-profile", {"profile": profile, "transcript": []}
+            )
+
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["chart"]["solar_date"].startswith("1981-04-04"))
+        self.assertEqual(
+            payload["chart"]["calculation_standard"]["skill"],
+            "jinchenma94/bazi-skill",
+        )
 
 
 if __name__ == "__main__":

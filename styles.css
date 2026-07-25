@@ -4097,6 +4097,13 @@ body.mystic-is-open {
   color: var(--mystic-gold-bright);
 }
 
+.birth-form .birth-date-help {
+  color: rgb(232 223 200 / 36%);
+  font-size: 8px;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
 .birth-form__place {
   grid-column: 1 / -1;
 }
@@ -4626,6 +4633,10 @@ body.mystic-is-open {
 .calendar-proof small {
   color: rgb(232 223 200 / 48%);
   font-size: 9px;
+}
+
+.calendar-proof .calendar-proof__standard {
+  color: var(--mystic-gold);
 }
 
 .professional-chart__body {

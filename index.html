@@ -601,7 +601,8 @@
             </label>
             <label>
               <span id="birth-date-label">阳历生日 *</span>
-              <input id="birth-date" name="birth_date" type="date" required />
+              <input id="birth-date" name="birth_date" type="date" aria-describedby="birth-date-help" required />
+              <small class="birth-date-help" id="birth-date-help">按公历选择出生日期</small>
             </label>
             <label>
               <span>出生时间精度 *</span>
@@ -713,6 +714,7 @@
             <div class="calendar-proof">
               <small id="skill-solar-date">阳历：—</small>
               <small id="skill-lunar-date">农历：—</small>
+              <small class="calendar-proof__standard" id="skill-calendar-standard">口径：立春定年 · 节气定月 · 晚子换日</small>
             </div>
           </header>
 

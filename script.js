@@ -96,9 +96,9 @@ const thinkingLines = [
 const heavenlyStems = [..."甲乙丙丁戊己庚辛壬癸"];
 const earthlyBranches = [..."子丑寅卯辰巳午未申酉戌亥"];
 const conversationHistory = {
-  boss: [{ id: "boss-seed", user: "好的，我尽量今晚做完。", outcome: scenarios.boss.rewind.outcome, rewrite: scenarios.boss.rewind.rewrite, reply: "", cheat: false }],
-  friendly: [{ id: "friendly-seed", user: "不用不用，我自己来就好。", outcome: scenarios.friendly.rewind.outcome, rewrite: scenarios.friendly.rewind.rewrite, reply: "", cheat: false }],
-  hostile: [{ id: "hostile-seed", user: "我记得啊，可能是你没说清楚吧。", outcome: scenarios.hostile.rewind.outcome, rewrite: scenarios.hostile.rewind.rewrite, reply: "", cheat: false }],
+  boss: [],
+  friendly: [],
+  hostile: [],
 };
 const liveExtras = { boss: [], friendly: [], hostile: [] };
 
@@ -194,6 +194,7 @@ const birthName = document.querySelector("#birth-name");
 const birthFormerName = document.querySelector("#birth-former-name");
 const birthCalendar = document.querySelector("#birth-calendar");
 const birthDateLabel = document.querySelector("#birth-date-label");
+const birthDateHelp = document.querySelector("#birth-date-help");
 const birthGender = document.querySelector("#birth-gender");
 const birthDate = document.querySelector("#birth-date");
 const birthTimePrecision = document.querySelector("#birth-time-precision");
@@ -216,6 +217,7 @@ const mysticResults = document.querySelector("#mystic-results");
 const skillChartName = document.querySelector("#skill-chart-name");
 const skillSolarDate = document.querySelector("#skill-solar-date");
 const skillLunarDate = document.querySelector("#skill-lunar-date");
+const skillCalendarStandard = document.querySelector("#skill-calendar-standard");
 const skillPillarTable = document.querySelector("#skill-pillar-table");
 const skillDayMaster = document.querySelector("#skill-day-master");
 const skillStrength = document.querySelector("#skill-strength");
@@ -531,8 +533,10 @@ function renderBaziProfile() {
   compatibilityBar.style.width = cheatEnabled ? `${profile.compatibility}%` : "0%";
 }
 
-function clearGeneratedConversation() {
-  document.querySelectorAll(".message-row--user, .message-row--feedback").forEach((node) => node.remove());
+function clearGeneratedConversation({ preserveMessages = false } = {}) {
+  if (!preserveMessages) {
+    document.querySelectorAll(".message-row--user, .message-row--feedback").forEach((node) => node.remove());
+  }
   activeFeedbackBubble = null;
   thinkingCard.hidden = true;
   thinkingCard.classList.remove("is-counting", "is-coaching");
@@ -579,6 +583,7 @@ function renderScenario(key) {
   createQuickPrompts(scenario.quickPrompts);
   renderBaziProfile();
   clearGeneratedConversation();
+  renderConversationHistory(key);
   updateChatRewindUI();
   if (scenarioChanged) {
     composerStatus.textContent = "已进入新场景：八字外挂默认关闭，需要时请手动开启。";
@@ -692,11 +697,10 @@ async function startChatRewind() {
   const history = conversationHistory[activeScenario];
   const nodeIndex = history.findIndex((item) => item.id === node.id);
   if (nodeIndex >= 0) history.splice(nodeIndex, 1);
-  latestTurnByScenario[activeScenario] = [...history]
-    .reverse()
-    .find((item) => !item.id.endsWith("-seed")) || null;
+  latestTurnByScenario[activeScenario] = history.at(-1) || null;
 
   clearGeneratedConversation();
+  renderConversationHistory(activeScenario);
   userMessage.value = node.rewrite || node.user;
   conversationStage.classList.remove("is-rewinding");
   updateChatRewindUI();
@@ -720,13 +724,11 @@ function addUserMessage(text) {
   chatWindow.insertBefore(row, thinkingCard);
 }
 
-function beginOpponentFeedback(sender, reaction, source = "demo-fallback") {
-  stopThinkingLoop();
-  thinkingCard.hidden = true;
-
+function addOpponentMessage(sender, text, reaction, source = "demo-fallback") {
   const row = document.createElement("div");
   row.className = "message-row message-row--opponent message-row--feedback";
   row.dataset.reaction = reaction || "对方反馈";
+  row.dataset.source = source;
   const now = new Date();
   const time = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 
@@ -737,8 +739,33 @@ function beginOpponentFeedback(sender, reaction, source = "demo-fallback") {
   row.querySelector(".bubble-meta span").textContent = source === "deepseek-v4"
     ? `${sender} · AI 实时角色回应`
     : `${sender} · 场景角色回应`;
-  activeFeedbackBubble = row.querySelector(".chat-bubble");
+  const bubble = row.querySelector(".chat-bubble");
+  bubble.textContent = text;
   chatWindow.insertBefore(row, thinkingCard);
+  return bubble;
+}
+
+function renderConversationHistory(key = activeScenario) {
+  document.querySelectorAll(".message-row--user, .message-row--feedback").forEach((node) => node.remove());
+  conversationHistory[key].forEach((turn) => {
+    addUserMessage(turn.user);
+    if (turn.reply) {
+      addOpponentMessage(
+        scenarios[key].sender,
+        turn.reply,
+        turn.reaction || "继续回应",
+        turn.source || "demo-fallback",
+      );
+    }
+  });
+  activeFeedbackBubble = null;
+  scrollChatToBottom();
+}
+
+function beginOpponentFeedback(sender, reaction, source = "demo-fallback") {
+  stopThinkingLoop();
+  thinkingCard.hidden = true;
+  activeFeedbackBubble = addOpponentMessage(sender, "", reaction, source);
   scrollChatToBottom();
 }
 
@@ -917,6 +944,8 @@ function handleStreamEvent(event) {
           outcome: event.outcome || "对方已经回应，你可以回到发送前重写这句话。",
           rewrite: streamingReply.textContent.trim() || pendingTurn.message,
           cheat: pendingTurn.cheat,
+          reaction: activeFeedbackBubble?.closest(".message-row")?.dataset.reaction || "对方反馈",
+          source: activeFeedbackBubble?.closest(".message-row")?.dataset.source || "demo-fallback",
         };
         conversationHistory[pendingTurn.scenario].push(turnNode);
         latestTurnByScenario[pendingTurn.scenario] = turnNode;
@@ -960,7 +989,7 @@ async function submitMessage(event) {
 
   const text = userMessage.value.trim() || scenarios[activeScenario].defaultPrompt;
   userMessage.value = text;
-  clearGeneratedConversation();
+  clearGeneratedConversation({ preserveMessages: true });
   addUserMessage(text);
 
   isProcessing = true;
@@ -1202,6 +1231,18 @@ function fillCurrentOpponent() {
 function syncBirthFormState() {
   const isLunar = birthCalendar.value === "lunar";
   birthDateLabel.textContent = isLunar ? "农历生日 *" : "阳历生日 *";
+  birthDate.type = isLunar ? "text" : "date";
+  if (isLunar) {
+    birthDate.inputMode = "numeric";
+    birthDate.placeholder = "YYYY-MM-DD，例如 1981-02-30";
+    birthDate.pattern = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|30)";
+    birthDateHelp.textContent = "请输入真实农历年月日；农历二月三十等日期可以正常排盘";
+  } else {
+    birthDate.removeAttribute("inputmode");
+    birthDate.removeAttribute("placeholder");
+    birthDate.removeAttribute("pattern");
+    birthDateHelp.textContent = "按公历选择出生日期";
+  }
   leapMonthField.hidden = !isLunar;
   if (!isLunar) birthLeapMonth.checked = false;
 
@@ -1407,6 +1448,7 @@ function renderProfessionalChart(result) {
     : profile.name;
   skillSolarDate.textContent = `阳历：${chart.solar_date}`;
   skillLunarDate.textContent = `农历：${chart.lunar_date}`;
+  skillCalendarStandard.textContent = `口径：${chart.calculation_standard?.year || "立春定年柱"} · ${chart.calculation_standard?.month || "节气定月柱"} · ${chart.calculation_standard?.day || "晚子时换日"}`;
 
   const caption = document.createElement("caption");
   caption.textContent = "四柱、十神与藏干";

@@ -595,6 +595,9 @@ def build_bazi_chart(profile: Dict[str, Any]) -> Dict[str, Any]:
         raise RuntimeError("calendar_conversion_failed") from error
 
     eight_char = lunar.getEightChar()
+    # bazi-skill 采用“晚子时换日”：23:00–24:00 的日柱按次日计算。
+    # lunar_python 的 sect=1 对应该口径；默认 sect=2 会仍按当日排盘。
+    eight_char.setSect(1)
     pillar_values = [
         eight_char.getYear(),
         eight_char.getMonth(),
@@ -670,6 +673,15 @@ def build_bazi_chart(profile: Dict[str, Any]) -> Dict[str, Any]:
     day_stem = pillars[2]["stem"]
     return {
         "engine": "lunar_python",
+        "calculation_standard": {
+            "skill": "jinchenma94/bazi-skill",
+            "year": "立春定年柱",
+            "month": "节气定月柱",
+            "day": "23:00 后按晚子时换日",
+            "calendar": "农历先换算为阳历，再按节气排四柱"
+            if profile.get("calendar_type") == "lunar"
+            else "阳历按节气直接排四柱",
+        },
         "solar_date": solar.toYmdHms(),
         "lunar_date": lunar.toString(),
         "pillars": pillars,
@@ -955,6 +967,8 @@ WORKPLACE_SYSTEM_PROMPT = """
 三类场景：boss 是继续追结果但可以被明确选项推动拍板的上司；friendly 是真心帮忙、会在善意被拒绝时后撤的同事；
 hostile 是用信息差和阴阳话术给自己留退路、遇到公开记录会收敛的同事。保留权力差和人物惯性，不要让对方突然服软。
 opponent_reply 必须回应 user_message 里的具体信息，保留 character_reference 定义的说话习惯，长度 15 至 90 个汉字。
+recent_messages 按时间顺序记录此前真实对话；只要其中已有用户和对方的往返，就必须承接上一轮已经确认的信息继续回应，
+不得重新复述场景开场、不得再次询问已经回答的问题，也不得把本轮当作第一次见面。
 character_profile 只能基于本轮可观察措辞，说明人物惯性、当前诉求与沟通习惯，不得声称读心或做心理诊断。
 
 当 bazi_enabled 为 true 时，必须实质使用 professional_bazi 和 bazi_profile：
