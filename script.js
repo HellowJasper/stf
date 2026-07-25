@@ -110,7 +110,9 @@ const moodTag = document.querySelector("#mood-tag");
 const messageSender = document.querySelector("#message-sender");
 const opponentMessage = document.querySelector("#opponent-message");
 const conversationStage = document.querySelector(".conversation-stage");
+const chatScrollShell = document.querySelector("#chat-scroll-shell");
 const chatWindow = document.querySelector("#chat-window");
+const chatJumpLatest = document.querySelector("#chat-jump-latest");
 const quickPrompts = document.querySelector("#quick-prompts");
 const composer = document.querySelector("#composer");
 const userMessage = document.querySelector("#user-message");
@@ -261,6 +263,9 @@ let cheatEnabled = false;
 let isProcessing = false;
 let requestController = null;
 let thinkingTimer = 0;
+let chatScrollReleaseTimer = 0;
+let chatAutoFollow = true;
+let chatScrollProgrammatic = false;
 let cheatLoadingTimer = 0;
 let cheatLoading = false;
 let activeFeedbackBubble = null;
@@ -491,9 +496,43 @@ function resetPatienceState() {
   showPatienceToast(0, "今日耐心账户已重置");
 }
 
-function scrollChatToBottom() {
+function chatScrollMetrics() {
+  const distanceFromBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight;
+  return {
+    canScroll: chatWindow.scrollHeight > chatWindow.clientHeight + 2,
+    atTop: chatWindow.scrollTop <= 4,
+    atBottom: distanceFromBottom <= 18,
+  };
+}
+
+function updateChatScrollState({ fromUser = false } = {}) {
+  const { canScroll, atTop, atBottom } = chatScrollMetrics();
+  if (fromUser && !chatScrollProgrammatic) chatAutoFollow = atBottom;
+  chatScrollShell.classList.toggle("can-scroll-up", canScroll && !atTop);
+  chatScrollShell.classList.toggle("can-scroll-down", canScroll && !atBottom);
+  chatJumpLatest.hidden = !canScroll || atBottom;
+}
+
+function releaseProgrammaticChatScroll(delay = 80) {
+  window.clearTimeout(chatScrollReleaseTimer);
+  chatScrollReleaseTimer = window.setTimeout(() => {
+    chatScrollProgrammatic = false;
+    chatAutoFollow = chatScrollMetrics().atBottom;
+    updateChatScrollState();
+  }, delay);
+}
+
+function scrollChatToBottom({ force = false, behavior = "auto" } = {}) {
+  if (!force && !chatAutoFollow) {
+    requestAnimationFrame(() => updateChatScrollState());
+    return;
+  }
   requestAnimationFrame(() => {
-    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "smooth" });
+    chatScrollProgrammatic = true;
+    chatAutoFollow = true;
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior });
+    updateChatScrollState();
+    releaseProgrammaticChatScroll(behavior === "smooth" ? 520 : 80);
   });
 }
 
@@ -774,7 +813,8 @@ function renderConversationHistory(key = activeScenario) {
     }
   });
   activeFeedbackBubble = null;
-  scrollChatToBottom();
+  chatAutoFollow = true;
+  scrollChatToBottom({ force: true });
 }
 
 function beginOpponentFeedback(sender, reaction, source = "demo-fallback") {
@@ -1030,7 +1070,7 @@ async function submitMessage(event) {
   thinkingSeconds.textContent = "正在抽取";
   thinkingCard.hidden = false;
   startThinkingLoop();
-  scrollChatToBottom();
+  scrollChatToBottom({ force: true, behavior: "smooth" });
 
   try {
     const response = await fetch("./api/respond", {
@@ -1710,6 +1750,31 @@ async function addLiveMessage(event) {
 sceneButtons.forEach((button) => {
   button.addEventListener("click", () => renderScenario(button.dataset.scenario));
 });
+
+chatWindow.addEventListener("scroll", () => updateChatScrollState({ fromUser: true }), { passive: true });
+chatWindow.addEventListener("wheel", () => {
+  chatScrollProgrammatic = false;
+  window.clearTimeout(chatScrollReleaseTimer);
+}, { passive: true });
+chatWindow.addEventListener("pointerdown", () => {
+  chatScrollProgrammatic = false;
+  window.clearTimeout(chatScrollReleaseTimer);
+}, { passive: true });
+chatWindow.addEventListener("keydown", (event) => {
+  if (!["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) return;
+  chatScrollProgrammatic = false;
+  window.clearTimeout(chatScrollReleaseTimer);
+  requestAnimationFrame(() => updateChatScrollState({ fromUser: true }));
+});
+chatJumpLatest.addEventListener("click", () => {
+  chatAutoFollow = true;
+  scrollChatToBottom({ force: true, behavior: "smooth" });
+});
+
+const chatScrollObserver = new MutationObserver(() => {
+  requestAnimationFrame(() => updateChatScrollState());
+});
+chatScrollObserver.observe(chatWindow, { childList: true, subtree: true, characterData: true });
 
 bootSkipButton.addEventListener("click", () => finishBootSequence());
 cheatSwitch.addEventListener("click", toggleCheat);

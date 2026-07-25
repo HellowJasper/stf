@@ -67,6 +67,7 @@ function turnEvents(index) {
     await page.locator("#boot-skip").click();
 
     const mysticEntry = page.locator("#open-mystic-lab");
+    const conversationHeightBefore = (await page.locator(".conversation-stage").boundingBox()).height;
     const mysticEntryBox = await mysticEntry.boundingBox();
     const mysticEntryText = await mysticEntry.textContent();
     assert(
@@ -105,6 +106,37 @@ function turnEvents(index) {
 
     if (await page.locator(".message-row--user").count() !== 2) failures.push("第二轮发送后第一轮用户消息被清空");
     if (await page.locator(".message-row--feedback").count() !== 2) failures.push("第二轮发送后第一轮对方回复被清空");
+    const conversationHeightAfter = (await page.locator(".conversation-stage").boundingBox()).height;
+    assert(
+      Math.abs(conversationHeightAfter - conversationHeightBefore) <= 2,
+      "多轮消息仍把整个聊天面板不断向下撑长",
+    );
+    const scrollMetrics = await page.locator("#chat-window").evaluate((node) => ({
+      clientHeight: node.clientHeight,
+      scrollHeight: node.scrollHeight,
+    }));
+    assert(
+      scrollMetrics.scrollHeight > scrollMetrics.clientHeight,
+      "聊天记录没有形成内部上下滚动区域",
+    );
+    await page.locator("#chat-window").evaluate((node) => { node.scrollTop = 0; });
+    await page.waitForFunction(() => !document.querySelector("#chat-jump-latest").hidden);
+    await page.locator("#chat-jump-latest").click();
+    await page.waitForFunction(() => {
+      const node = document.querySelector("#chat-window");
+      return node.scrollHeight - node.scrollTop - node.clientHeight <= 20;
+    });
+    await page.locator("#chat-window").focus();
+    await page.keyboard.press("Home");
+    await page.waitForFunction(() => document.querySelector("#chat-window").scrollTop <= 4);
+    await page.evaluate(() => {
+      window.handleStreamEvent({ type: "opponent_delta", text: "（流式补充）" });
+    });
+    await page.waitForTimeout(120);
+    assert(
+      await page.locator("#chat-window").evaluate((node) => node.scrollTop <= 4),
+      "用户用键盘上滑查看历史时，流式回复仍把聊天框强制拉回底部",
+    );
     const visibleConversation = await page.locator("#chat-window").textContent();
     if (!visibleConversation.includes(firstMessage)) failures.push("聊天窗口没有保留第一轮原话");
     assert(visibleConversation.includes(secondMessage), "聊天窗口没有显示第二轮原话");

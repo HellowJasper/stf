@@ -13,7 +13,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ffe600'/%3E%3Cpath d='M13 14h38v36H13z' fill='%23131313'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='28' font-family='sans-serif' font-weight='900' fill='%23ffe600'%3E爽%3C/text%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260726-2" />
+    <link rel="stylesheet" href="./styles.css?v=20260726-3" />
   </head>
   <body class="is-booting">
     <section class="boot-screen" id="boot-screen" data-stage="1" aria-label="工位开挂局正在启动" aria-live="polite" aria-atomic="true">
@@ -220,7 +220,17 @@
           </div>
         </header>
 
-        <div class="chat-window" id="chat-window" aria-live="polite">
+        <div class="chat-scroll-shell" id="chat-scroll-shell">
+          <div
+            class="chat-window"
+            id="chat-window"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-atomic="false"
+            aria-label="对话记录，可上下滚动"
+            tabindex="0"
+          >
           <div class="message-row message-row--opponent">
             <div class="bubble-meta">
               <span id="message-sender">王总</span>
@@ -321,7 +331,7 @@
                   复制下一句
                 </button>
               </div>
-              <p id="streaming-reply" aria-live="polite"></p>
+              <p id="streaming-reply"></p>
               <span class="streaming-caret" id="streaming-caret" hidden aria-hidden="true"></span>
             </div>
 
@@ -338,6 +348,14 @@
               </div>
             </div>
           </article>
+          </div>
+
+          <span class="chat-scroll-edge chat-scroll-edge--top" aria-hidden="true"></span>
+          <span class="chat-scroll-edge chat-scroll-edge--bottom" aria-hidden="true"></span>
+          <button class="chat-jump-latest" id="chat-jump-latest" type="button" hidden>
+            <span aria-hidden="true">↓</span>
+            回到最新
+          </button>
         </div>
 
         <form class="composer" id="composer">
@@ -874,6 +892,6 @@
       <p class="noscript-message">请启用 JavaScript 以体验职场对话拆招 Demo。</p>
     </noscript>
 
-    <script src="./script.js?v=20260726-2" defer></script>
+    <script src="./script.js?v=20260726-3" defer></script>
   </body>
 </html>
