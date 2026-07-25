@@ -141,6 +141,14 @@ function assert(condition, message) {
     assert((await page.locator("#analysis-object-name").textContent()).trim() === "王总", "当前分析对象没有同步");
     assert((await page.locator("#mystic-ambience .mystic-star").count()) === 220, "多层星空没有完整生成");
     assert((await page.locator("#mystic-ambience .mystic-star--river").count()) === 70, "斜向星河没有完整生成");
+    assert((await page.locator(".mystic-constellation-group").count()) === 3, "大型星座没有完整生成");
+    await page.mouse.move(260, 250);
+    await page.waitForTimeout(180);
+    assert((await page.locator(".mystic-constellation-group.is-lit").count()) === 1, "鼠标靠近时没有单独点亮对应星座");
+    await page.screenshot({ path: path.join(artifacts, "mystic-lab-constellation-hover.png") });
+    await page.mouse.move(720, 500);
+    await page.waitForTimeout(180);
+    assert((await page.locator(".mystic-constellation-group.is-lit").count()) === 0, "鼠标离开星座后光晕没有收回");
     assert((await page.locator("#mystic-ambience .mystic-particle").count()) === 30, "玄学环境粒子没有完整生成");
     assert((await page.locator(".oracle-glyph").count()) === 22, "天干地支流转环没有完整渲染");
     const ringMotion = await page.locator(".oracle-ring--outer").evaluate((node) => getComputedStyle(node, "::before").animationName);
@@ -197,6 +205,7 @@ function assert(condition, message) {
         "artifacts/workplace-demo-chat-rewind.png",
         "artifacts/mystic-entry-freeze.png",
         "artifacts/mystic-entry-compass.png",
+        "artifacts/mystic-lab-constellation-hover.png",
         "artifacts/mystic-lab-input.png",
         "artifacts/mystic-lab-result.png",
       ],

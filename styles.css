@@ -1840,6 +1840,105 @@ body.mystic-is-open {
   animation: mystic-galaxy-breathe 16s ease-in-out infinite alternate;
 }
 
+.mystic-sky-map {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.mystic-constellation-group {
+  opacity: 0.16;
+  filter: drop-shadow(0 0 3px rgb(155 182 197 / 8%));
+  transition: opacity 480ms ease, filter 560ms ease;
+}
+
+.mystic-constellation-group:nth-of-type(2) {
+  --constellation-delay: -1.8s;
+}
+
+.mystic-constellation-group:nth-of-type(3) {
+  --constellation-delay: -3.6s;
+}
+
+.constellation-halo {
+  fill: url("#constellation-halo");
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 620ms ease, transform 760ms cubic-bezier(0.16, 0.76, 0.2, 1);
+  transform: scale(0.82);
+}
+
+.constellation-link {
+  fill: none;
+  stroke: #9bb6c5;
+  stroke-dasharray: 3 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-opacity: 0.34;
+  stroke-width: 0.9;
+  vector-effect: non-scaling-stroke;
+  animation: mystic-constellation-line 6.4s ease-in-out var(--constellation-delay, 0s) infinite;
+  transition: stroke 440ms ease, stroke-dasharray 520ms ease, stroke-opacity 440ms ease, stroke-width 440ms ease;
+}
+
+.constellation-link--echo {
+  stroke: #c7a66a;
+  stroke-opacity: 0.26;
+}
+
+.constellation-node {
+  fill: #c5d4d9;
+  opacity: 0.52;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mystic-constellation-star 5.2s ease-in-out var(--constellation-delay, 0s) infinite;
+  transition: fill 420ms ease;
+}
+
+.constellation-node--major {
+  fill: #efd69a;
+  animation-duration: 4.1s;
+}
+
+.mystic-constellation-group.is-lit {
+  opacity: 0.92;
+  filter:
+    drop-shadow(0 0 7px rgb(239 214 154 / 44%))
+    drop-shadow(0 0 20px rgb(155 182 197 / 24%));
+}
+
+.mystic-constellation-group.is-lit .constellation-halo {
+  opacity: 0.92;
+  transform: scale(1);
+}
+
+.mystic-constellation-group.is-lit .constellation-link {
+  stroke: #d9e2df;
+  stroke-dasharray: 1 3;
+  stroke-opacity: 0.7;
+  stroke-width: 1.15;
+}
+
+.mystic-constellation-group.is-lit .constellation-link--echo {
+  stroke: #efd69a;
+  stroke-opacity: 0.66;
+}
+
+.mystic-constellation-group.is-lit .constellation-node {
+  fill: #f5f0df;
+  animation-name: mystic-constellation-star-lit;
+  animation-duration: 1.8s;
+}
+
+.mystic-constellation-group.is-lit .constellation-node--major {
+  fill: #fff1bc;
+}
+
 .mystic-particle {
   position: absolute;
   top: var(--particle-y);
@@ -3844,6 +3943,25 @@ body.mystic-is-open {
 @keyframes mystic-galaxy-breathe {
   from { opacity: 0.42; transform: rotate(11deg) translate3d(-1.5%, -1%, 0) scale(0.98); }
   to { opacity: 0.82; transform: rotate(11deg) translate3d(1.5%, 1%, 0) scale(1.05); }
+}
+
+@keyframes mystic-constellation-line {
+  0%, 100% { stroke-opacity: 0.18; }
+  46% { stroke-opacity: 0.38; }
+  61% { stroke-opacity: 0.24; }
+  78% { stroke-opacity: 0.42; }
+}
+
+@keyframes mystic-constellation-star {
+  0%, 100% { opacity: 0.26; transform: scale(0.72); }
+  44% { opacity: 0.72; transform: scale(1); }
+  66% { opacity: 0.38; transform: scale(0.82); }
+  82% { opacity: 0.8; transform: scale(1.08); }
+}
+
+@keyframes mystic-constellation-star-lit {
+  0%, 100% { opacity: 0.68; transform: scale(0.88); }
+  50% { opacity: 1; transform: scale(1.26); }
 }
 
 @keyframes mystic-particle-float {

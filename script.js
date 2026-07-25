@@ -161,6 +161,7 @@ const strategyCopy = document.querySelector("#strategy-copy");
 const openMysticLabButton = document.querySelector("#open-mystic-lab");
 const mysticLab = document.querySelector("#mystic-lab");
 const mysticAmbience = document.querySelector("#mystic-ambience");
+const mysticConstellationGroups = [...document.querySelectorAll(".mystic-constellation-group")];
 const mysticEntry = document.querySelector("#mystic-entry");
 const entryBranches = document.querySelector("#entry-branches");
 const entryStems = document.querySelector("#entry-stems");
@@ -950,15 +951,35 @@ function syncAnalysisObjectName() {
 }
 
 function updateMysticParallax(event) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   window.cancelAnimationFrame(mysticPointerFrame);
   mysticPointerFrame = window.requestAnimationFrame(() => {
     const rect = mysticLab.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
     const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
-    mysticLab.style.setProperty("--pointer-x", `${x.toFixed(1)}%`);
-    mysticLab.style.setProperty("--pointer-y", `${y.toFixed(1)}%`);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      mysticLab.style.setProperty("--pointer-x", `${x.toFixed(1)}%`);
+      mysticLab.style.setProperty("--pointer-y", `${y.toFixed(1)}%`);
+    }
+
+    let closestGroup = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    mysticConstellationGroups.forEach((group) => {
+      const deltaX = (x - Number(group.dataset.centerX)) / 18;
+      const deltaY = (y - Number(group.dataset.centerY)) / 21;
+      const distance = Math.hypot(deltaX, deltaY);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestGroup = group;
+      }
+    });
+    mysticConstellationGroups.forEach((group) => {
+      group.classList.toggle("is-lit", group === closestGroup && closestDistance < 1);
+    });
   });
+}
+
+function clearMysticConstellationHover() {
+  mysticConstellationGroups.forEach((group) => group.classList.remove("is-lit"));
 }
 
 function fillCurrentOpponent() {
@@ -1427,6 +1448,7 @@ mysticLab.addEventListener("pointermove", updateMysticParallax, { passive: true 
 mysticLab.addEventListener("pointerleave", () => {
   mysticLab.style.setProperty("--pointer-x", "72%");
   mysticLab.style.setProperty("--pointer-y", "34%");
+  clearMysticConstellationHover();
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !patienceLedger.hidden) {
