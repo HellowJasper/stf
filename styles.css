@@ -5385,6 +5385,151 @@ body.mystic-is-open {
   font-size: 8px;
 }
 
+.solar-time-review {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid rgb(155 182 163 / 34%);
+  background:
+    linear-gradient(118deg, rgb(155 182 163 / 8%), transparent 42%),
+    rgb(10 15 12 / 88%);
+  box-shadow: 0 18px 55px rgb(0 0 0 / 20%);
+}
+
+.solar-time-review::before {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 49.8%, rgb(199 166 106 / 12%) 50%, transparent 50.2%),
+    repeating-linear-gradient(0deg, transparent 0 29px, rgb(199 166 106 / 5%) 30px);
+  content: "";
+  opacity: 0.56;
+  pointer-events: none;
+}
+
+.solar-time-review > * {
+  position: relative;
+  z-index: 1;
+}
+
+.solar-time-review > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgb(155 182 163 / 24%);
+}
+
+.solar-time-review > header span {
+  color: var(--mystic-jade);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.solar-time-review > header h3 {
+  margin: 5px 0 0;
+  color: var(--mystic-paper);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.solar-time-review > header b {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgb(155 182 163 / 42%);
+  color: var(--mystic-jade);
+  background: rgb(155 182 163 / 9%);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.solar-time-review[data-state="changed"] {
+  border-color: rgb(216 92 71 / 70%);
+  background:
+    linear-gradient(118deg, rgb(216 92 71 / 11%), transparent 44%),
+    rgb(18 12 11 / 90%);
+}
+
+.solar-time-review[data-state="changed"] > header b {
+  border-color: rgb(216 92 71 / 82%);
+  color: #ffd8cb;
+  background: rgb(216 92 71 / 16%);
+  box-shadow: 0 0 22px rgb(216 92 71 / 14%);
+}
+
+.solar-time-review__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.solar-time-review__facts > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 13px 18px;
+  border-right: 1px solid rgb(155 182 163 / 16%);
+}
+
+.solar-time-review__facts > div:last-child {
+  border-right: 0;
+}
+
+.solar-time-review small {
+  color: rgb(232 223 200 / 42%);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.solar-time-review__facts strong,
+.solar-time-review__pillars strong {
+  overflow: hidden;
+  color: rgb(232 223 200 / 82%);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+}
+
+.solar-time-review__facts strong {
+  white-space: nowrap;
+}
+
+.solar-time-review > p {
+  margin: 0;
+  padding: 10px 18px;
+  border-top: 1px solid rgb(155 182 163 / 16%);
+  color: rgb(232 223 200 / 58%);
+  font-size: 9px;
+  line-height: 1.7;
+}
+
+.solar-time-review__pillars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid rgb(155 182 163 / 16%);
+}
+
+.solar-time-review__pillars > div {
+  display: grid;
+  gap: 7px;
+  padding: 11px 18px 13px;
+}
+
+.solar-time-review__pillars > div + div {
+  border-left: 1px solid rgb(155 182 163 / 16%);
+}
+
+.solar-time-review[data-state="changed"] .solar-time-review__pillars > div:last-child strong {
+  color: #ffd3c8;
+  text-shadow: 0 0 18px rgb(216 92 71 / 18%);
+}
+
 .classical-analysis {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1.2fr;
@@ -7721,6 +7866,46 @@ body.mystic-is-open {
     align-items: flex-start;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .solar-time-review {
+    margin-top: 11px;
+  }
+
+  .solar-time-review > header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px;
+  }
+
+  .solar-time-review > header h3 {
+    font-size: 18px;
+  }
+
+  .solar-time-review__facts,
+  .solar-time-review__pillars {
+    grid-template-columns: 1fr;
+  }
+
+  .solar-time-review__facts > div,
+  .solar-time-review__pillars > div {
+    padding: 11px 14px;
+    border-right: 0;
+    border-bottom: 1px solid rgb(155 182 163 / 16%);
+  }
+
+  .solar-time-review__facts > div:last-child,
+  .solar-time-review__pillars > div:last-child {
+    border-bottom: 0;
+  }
+
+  .solar-time-review__pillars > div + div {
+    border-left: 0;
+  }
+
+  .solar-time-review > p {
+    padding: 10px 14px;
   }
 
   .classical-analysis {

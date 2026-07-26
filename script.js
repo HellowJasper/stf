@@ -211,6 +211,8 @@ const birthDate = document.querySelector("#birth-date");
 const birthTimePrecision = document.querySelector("#birth-time-precision");
 const birthTime = document.querySelector("#birth-time");
 const birthPlace = document.querySelector("#birth-place");
+const birthLongitude = document.querySelector("#birth-longitude");
+const birthTimezone = document.querySelector("#birth-timezone");
 const birthLifeStatus = document.querySelector("#birth-life-status");
 const birthDeathYear = document.querySelector("#birth-death-year");
 const deathYearField = document.querySelector("#death-year-field");
@@ -237,6 +239,14 @@ const skillChartName = document.querySelector("#skill-chart-name");
 const skillSolarDate = document.querySelector("#skill-solar-date");
 const skillLunarDate = document.querySelector("#skill-lunar-date");
 const skillCalendarStandard = document.querySelector("#skill-calendar-standard");
+const solarTimeReview = document.querySelector("#solar-time-review");
+const solarTimeState = document.querySelector("#solar-time-state");
+const solarTimeCivil = document.querySelector("#solar-time-civil");
+const solarTimeTrue = document.querySelector("#solar-time-true");
+const solarTimeLocation = document.querySelector("#solar-time-location");
+const solarTimeReason = document.querySelector("#solar-time-reason");
+const solarTimeCivilPillars = document.querySelector("#solar-time-civil-pillars");
+const solarTimeTruePillars = document.querySelector("#solar-time-true-pillars");
 const pillarTableWrap = document.querySelector(".pillar-table-wrap");
 const skillPillarTable = document.querySelector("#skill-pillar-table");
 const skillDayMaster = document.querySelector("#skill-day-master");
@@ -1502,6 +1512,8 @@ function fillCurrentOpponent() {
   birthTimePrecision.value = "exact";
   birthTime.value = profile.time;
   birthPlace.value = profile.place;
+  birthLongitude.value = "";
+  birthTimezone.value = "";
   birthLifeStatus.value = "alive";
   birthDeathYear.value = "";
   birthLeapMonth.checked = false;
@@ -1710,6 +1722,8 @@ function profileFromForm() {
     birth_time: birthTimePrecision.value === "unknown" ? "" : birthTime.value,
     time_precision: birthTimePrecision.value,
     birth_place: birthPlace.value.trim(),
+    birth_longitude: birthLongitude.value.trim(),
+    birth_timezone: birthTimezone.value,
     life_status: birthLifeStatus.value,
     death_year: birthDeathYear.value.trim(),
     leap_month: birthLeapMonth.checked,
@@ -1848,15 +1862,45 @@ function appendTableRow(label, values, className = "") {
   return row;
 }
 
+function formatPillars(pillars) {
+  return Array.isArray(pillars) && pillars.length ? pillars.join(" · ") : "—";
+}
+
+function renderSolarTimeReview(chart) {
+  const review = chart.solar_time_review || {};
+  const hasCorrection = Boolean(review.applied);
+  const hasChange = Boolean(review.pillar_changed);
+  const requiresReview = Boolean(review.review_required);
+  solarTimeReview.dataset.state = hasChange ? "changed" : (hasCorrection ? "stable" : "pending");
+  solarTimeState.textContent = hasChange
+    ? `边界变化：${(review.changed_pillars || []).join("、")}`
+    : (hasCorrection ? "已校时 · 四柱稳定" : (requiresReview ? "待人工复核" : "未校时"));
+  solarTimeCivil.textContent = review.civil_time || chart.civil_solar_date || chart.solar_date || "—";
+  solarTimeTrue.textContent = hasCorrection
+    ? `${review.true_solar_time}（${Number(review.correction_minutes || 0) >= 0 ? "+" : ""}${review.correction_minutes} 分）`
+    : "未启用";
+  const hasLongitude = review.longitude !== null
+    && review.longitude !== undefined
+    && review.longitude !== ""
+    && Number.isFinite(Number(review.longitude));
+  const longitude = hasLongitude ? `${review.longitude}°` : "经度待补充";
+  solarTimeLocation.textContent = `${review.location_name || "地点未识别"} · ${longitude} · ${review.timezone || "—"}`;
+  solarTimeReason.textContent = review.reason || "本次排盘未返回真太阳时复核信息。";
+  solarTimeCivilPillars.textContent = formatPillars(review.civil_pillars || chart.pillars?.map((pillar) => `${pillar.stem}${pillar.branch}`));
+  solarTimeTruePillars.textContent = formatPillars(review.true_solar_pillars || chart.pillars?.map((pillar) => `${pillar.stem}${pillar.branch}`));
+}
+
 function renderProfessionalChart(result) {
   const { chart, analysis, profile } = result;
   const pillars = chart.pillars;
   skillChartName.textContent = profile.former_name
     ? `${profile.name}（曾用名：${profile.former_name}）`
     : profile.name;
-  skillSolarDate.textContent = `阳历：${chart.solar_date}`;
+  const solarReview = chart.solar_time_review || {};
+  skillSolarDate.textContent = `${solarReview.applied ? "真太阳时阳历" : "阳历"}：${chart.solar_date}`;
   skillLunarDate.textContent = `农历：${chart.lunar_date}`;
-  skillCalendarStandard.textContent = `口径：${chart.calculation_standard?.year || "立春定年柱"} · ${chart.calculation_standard?.month || "节气定月柱"} · ${chart.calculation_standard?.day || "晚子时换日"}`;
+  skillCalendarStandard.textContent = `口径：${chart.calculation_standard?.year || "立春定年柱"} · ${chart.calculation_standard?.month || "节气定月柱"} · ${chart.calculation_standard?.day || "晚子时换日"} · ${chart.calculation_standard?.time || "民用时间排盘"}`;
+  renderSolarTimeReview(chart);
 
   const caption = document.createElement("caption");
   caption.textContent = "四柱、十神与藏干";

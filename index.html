@@ -719,6 +719,35 @@
                 required
               />
             </label>
+            <label>
+              <span>出生经度（可选）</span>
+              <input
+                id="birth-longitude"
+                name="birth_longitude"
+                type="number"
+                min="-180"
+                max="180"
+                step="0.0001"
+                inputmode="decimal"
+                placeholder="城市未识别时填，如 118.7969"
+              />
+              <small class="birth-date-help">手填优先；用于把民用时间校正为真太阳时</small>
+            </label>
+            <label>
+              <span>出生时区</span>
+              <select id="birth-timezone" name="birth_timezone">
+                <option value="">由出生城市自动识别（中国大陆默认 UTC+8）</option>
+                <option value="Asia/Shanghai">中国标准时间 UTC+8</option>
+                <option value="Asia/Hong_Kong">香港时间 UTC+8</option>
+                <option value="Asia/Taipei">台北时间 UTC+8</option>
+                <option value="Asia/Singapore">新加坡时间 UTC+8</option>
+                <option value="Asia/Tokyo">日本时间 UTC+9</option>
+                <option value="Europe/London">英国时间</option>
+                <option value="America/New_York">美国东部时间</option>
+                <option value="America/Los_Angeles">美国太平洋时间</option>
+              </select>
+              <small class="birth-date-help">用于处理历史夏令时；城市预设会自动识别</small>
+            </label>
             <label id="death-year-field" hidden>
               <span>去世年份</span>
               <input id="birth-death-year" name="death_year" inputmode="numeric" maxlength="4" placeholder="例如：2020" />
@@ -740,7 +769,7 @@
           </button>
 
           <p class="birth-form__note">
-            使用 lunar_python 按节气生成四柱。出生地用于真太阳时边界提醒；时辰不确定时仅展示六字结构。
+            lunar_python 负责历法与节气排盘，bazi-skill 规定晚子时、顺逆排与解读口径。地点/经度会参与真太阳时复核；时辰不确定时仅展示六字结构。
           </p>
         </form>
 
@@ -865,6 +894,32 @@
               <header><span>大运序列</span><small>每步十年</small></header>
               <div class="dayun-track" id="dayun-track"></div>
             </section>
+          </div>
+        </section>
+
+        <section class="solar-time-review" id="solar-time-review" data-state="waiting" aria-labelledby="solar-time-title">
+          <header>
+            <div>
+              <span>03A · 时空校时</span>
+              <h3 id="solar-time-title">民用时间 × 真太阳时复核</h3>
+            </div>
+            <b id="solar-time-state">等待排盘</b>
+          </header>
+          <div class="solar-time-review__facts">
+            <div><small>民用时间</small><strong id="solar-time-civil">—</strong></div>
+            <div><small>真太阳时</small><strong id="solar-time-true">—</strong></div>
+            <div><small>地点 / 时区</small><strong id="solar-time-location">—</strong></div>
+          </div>
+          <p id="solar-time-reason">提交后会显示地点经度、均时差与是否跨越四柱边界。</p>
+          <div class="solar-time-review__pillars">
+            <div>
+              <small>民用时间盘</small>
+              <strong id="solar-time-civil-pillars">—</strong>
+            </div>
+            <div>
+              <small>真太阳时盘（当前采用）</small>
+              <strong id="solar-time-true-pillars">—</strong>
+            </div>
           </div>
         </section>
 

@@ -202,6 +202,8 @@ function assert(condition, message) {
     assert(maxGlyphTilt < 0.1, `天干地支文字仍有倾斜：${maxGlyphTilt}°`);
     assert(await page.locator("#birth-former-name").isVisible(), "bazi-skill 要求的曾用名字段没有嵌入");
     assert(await page.locator("#birth-former-name-year").isVisible(), "曾用名缺少可选改名年份");
+    assert(await page.locator("#birth-longitude").isVisible(), "真太阳时复核缺少手填经度入口");
+    assert(await page.locator("#birth-timezone").isVisible(), "真太阳时复核缺少时区入口");
     await page.locator("#birth-time-precision").selectOption("unknown");
     assert(await page.locator("#birth-time").isDisabled(), "时辰不确定时仍强制输入出生时间");
     await page.locator("#birth-time-precision").selectOption("exact");
@@ -222,6 +224,10 @@ function assert(condition, message) {
     assert((await page.locator("#skill-pillar-table tbody tr").count()) === 5, "bazi-skill 专业排盘表不完整");
     assert((await page.locator("#skill-pillar-table .pillar-row--stem td").allTextContents()).join("") === "庚戊庚丙", "历法引擎没有输出自定义出生日期对应的真实天干");
     assert((await page.locator("#skill-pillar-table .day-master-cell").textContent()).includes("庚"), "日主天干没有被单独标记");
+    assert(await page.locator("#solar-time-review").isVisible(), "专业排盘结果缺少真太阳时复核卡");
+    assert((await page.locator("#solar-time-state").textContent()).includes("已校时"), "城市地点没有参与真太阳时校正");
+    assert((await page.locator("#solar-time-civil-pillars").textContent()).trim().length > 8, "民用时间盘没有显示四柱");
+    assert((await page.locator("#solar-time-true-pillars").textContent()).trim().length > 8, "真太阳时盘没有显示四柱");
     assert((await page.locator("#skill-pillar-table .day-pillar-heading small").textContent()).trim() === "日主所在", "日柱表头没有说明日主位置");
     const dayMasterMotion = await page.locator("#skill-pillar-table .day-master-cell").evaluate((node) => getComputedStyle(node).animationName);
     assert(dayMasterMotion.includes("day-master-focus"), "日主核心格没有呼吸高亮动效");

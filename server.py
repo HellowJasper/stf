@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import random
 import re
@@ -15,11 +16,13 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+from datetime import datetime, timedelta
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from queue import Empty, Queue
 from typing import Any, Dict, Iterable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 try:
     from lunar_python import Lunar, Solar
@@ -52,6 +55,57 @@ WORKPLACE_AI_DEADLINE = 12.0
 WORKPLACE_SOURCE_DEADLINE = 3.0
 
 BAZI_SKILL_DIR = ROOT / "vendor" / "bazi-skill"
+
+# 这里不是在线地理编码：出生地不会被发往第三方服务。常见城市可本地识别；
+# 未收录的地点允许用户输入经度，避免把模糊地点伪装成精确真太阳时。
+LOCATION_PRESETS = (
+    (("北京",), 116.4074, "Asia/Shanghai", "北京市"),
+    (("天津",), 117.2000, "Asia/Shanghai", "天津市"),
+    (("上海",), 121.4737, "Asia/Shanghai", "上海市"),
+    (("重庆",), 106.5516, "Asia/Shanghai", "重庆市"),
+    (("南京",), 118.7969, "Asia/Shanghai", "江苏省南京市"),
+    (("杭州",), 120.1551, "Asia/Shanghai", "浙江省杭州市"),
+    (("苏州",), 120.5853, "Asia/Shanghai", "江苏省苏州市"),
+    (("无锡",), 120.3124, "Asia/Shanghai", "江苏省无锡市"),
+    (("广州",), 113.2644, "Asia/Shanghai", "广东省广州市"),
+    (("深圳",), 114.0579, "Asia/Shanghai", "广东省深圳市"),
+    (("珠海",), 113.5767, "Asia/Shanghai", "广东省珠海市"),
+    (("福州",), 119.2965, "Asia/Shanghai", "福建省福州市"),
+    (("厦门",), 118.0894, "Asia/Shanghai", "福建省厦门市"),
+    (("合肥",), 117.2272, "Asia/Shanghai", "安徽省合肥市"),
+    (("南昌",), 115.8582, "Asia/Shanghai", "江西省南昌市"),
+    (("济南",), 117.1201, "Asia/Shanghai", "山东省济南市"),
+    (("青岛",), 120.3826, "Asia/Shanghai", "山东省青岛市"),
+    (("郑州",), 113.6254, "Asia/Shanghai", "河南省郑州市"),
+    (("武汉",), 114.3054, "Asia/Shanghai", "湖北省武汉市"),
+    (("长沙",), 112.9388, "Asia/Shanghai", "湖南省长沙市"),
+    (("南宁",), 108.3669, "Asia/Shanghai", "广西壮族自治区南宁市"),
+    (("海口",), 110.1983, "Asia/Shanghai", "海南省海口市"),
+    (("成都",), 104.0665, "Asia/Shanghai", "四川省成都市"),
+    (("贵阳",), 106.6302, "Asia/Shanghai", "贵州省贵阳市"),
+    (("昆明",), 102.8329, "Asia/Shanghai", "云南省昆明市"),
+    (("西安", "西安市"), 108.9398, "Asia/Shanghai", "陕西省西安市"),
+    (("兰州",), 103.8343, "Asia/Shanghai", "甘肃省兰州市"),
+    (("西宁",), 101.7782, "Asia/Shanghai", "青海省西宁市"),
+    (("银川",), 106.2309, "Asia/Shanghai", "宁夏回族自治区银川市"),
+    (("呼和浩特",), 111.7492, "Asia/Shanghai", "内蒙古自治区呼和浩特市"),
+    (("太原",), 112.5492, "Asia/Shanghai", "山西省太原市"),
+    (("石家庄",), 114.5149, "Asia/Shanghai", "河北省石家庄市"),
+    (("沈阳",), 123.4315, "Asia/Shanghai", "辽宁省沈阳市"),
+    (("大连",), 121.6147, "Asia/Shanghai", "辽宁省大连市"),
+    (("长春",), 125.3235, "Asia/Shanghai", "吉林省长春市"),
+    (("哈尔滨",), 126.6425, "Asia/Shanghai", "黑龙江省哈尔滨市"),
+    (("拉萨",), 91.1172, "Asia/Shanghai", "西藏自治区拉萨市"),
+    (("乌鲁木齐",), 87.6168, "Asia/Shanghai", "新疆维吾尔自治区乌鲁木齐市"),
+    (("香港",), 114.1694, "Asia/Hong_Kong", "中国香港"),
+    (("澳门",), 113.5439, "Asia/Macau", "中国澳门"),
+    (("台北",), 121.5654, "Asia/Taipei", "中国台湾台北市"),
+    (("新加坡",), 103.8198, "Asia/Singapore", "新加坡"),
+    (("东京",), 139.6500, "Asia/Tokyo", "日本东京"),
+    (("伦敦",), -0.1276, "Europe/London", "英国伦敦"),
+    (("纽约",), -74.0060, "America/New_York", "美国纽约"),
+    (("洛杉矶",), -118.2437, "America/Los_Angeles", "美国洛杉矶"),
+)
 
 
 def _load_bazi_skill_bundle() -> Dict[str, Any]:
@@ -1008,12 +1062,79 @@ def _element_distribution(pillars: list[Dict[str, Any]]) -> Dict[str, int]:
     return {element: round(score / total * 100) for element, score in scores.items()}
 
 
-def build_bazi_chart(profile: Dict[str, Any]) -> Dict[str, Any]:
-    """使用 lunar_python 依照节气生成四柱、十神、藏干与大运。"""
+def _parse_longitude(value: Any) -> float | None:
+    try:
+        longitude = float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    return longitude if -180 <= longitude <= 180 else None
+
+
+def _resolve_birth_location(profile: Dict[str, Any]) -> Dict[str, Any]:
+    """从本地城市表或用户明确经度解析真太阳时所需的位置，不调用外部地理服务。"""
+
+    place = re.sub(r"\s+", "", _safe_text(profile.get("birth_place"), 80))
+    matched = None
+    for aliases, longitude, timezone_name, display_name in LOCATION_PRESETS:
+        if any(alias in place for alias in aliases):
+            matched = {
+                "longitude": longitude,
+                "timezone": timezone_name,
+                "name": display_name,
+            }
+            break
+
+    manual_longitude = _parse_longitude(profile.get("birth_longitude"))
+    requested_timezone = _safe_text(profile.get("birth_timezone"), 64)
+    timezone_name = requested_timezone or (matched or {}).get("timezone") or "Asia/Shanghai"
+    try:
+        ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError:
+        timezone_name = (matched or {}).get("timezone") or "Asia/Shanghai"
+
+    if manual_longitude is not None:
+        return {
+            "longitude": manual_longitude,
+            "timezone": timezone_name,
+            "name": "手动经度",
+            "source": "manual_longitude",
+        }
+    if matched:
+        return {**matched, "source": "city_preset"}
+    return {
+        "longitude": None,
+        "timezone": timezone_name,
+        "name": "地点未识别",
+        "source": "unresolved",
+    }
+
+
+def _equation_of_time_minutes(value: datetime) -> float:
+    """NOAA 近似公式：把当地平太阳时修正为真太阳时，误差仅用于边界复核而非天文预报。"""
+
+    day_index = value.timetuple().tm_yday
+    gamma = math.tau / 365 * (day_index - 1 + (value.hour - 12) / 24)
+    return 229.18 * (
+        0.000075
+        + 0.001868 * math.cos(gamma)
+        - 0.032077 * math.sin(gamma)
+        - 0.014615 * math.cos(2 * gamma)
+        - 0.040849 * math.sin(2 * gamma)
+    )
+
+
+def _solar_as_datetime(solar: Any) -> datetime:
+    return datetime(
+        solar.getYear(), solar.getMonth(), solar.getDay(),
+        solar.getHour(), solar.getMinute(), solar.getSecond(),
+    )
+
+
+def _create_civil_calendar(profile: Dict[str, Any]) -> tuple[Any, Any, bool]:
+    """先把用户填写的阳历或农历转换为同一份民用时间基准。"""
 
     if Solar is None or Lunar is None:
         raise RuntimeError("calendar_engine_unavailable")
-
     try:
         year, month, day = (int(part) for part in profile["birth_date"].split("-"))
         time_unknown = profile.get("time_precision") == "unknown"
@@ -1027,12 +1148,17 @@ def build_bazi_chart(profile: Dict[str, Any]) -> Dict[str, Any]:
         if profile.get("calendar_type") == "lunar":
             lunar_month = -month if profile.get("leap_month") == "true" else month
             lunar = Lunar.fromYmdHms(year, lunar_month, day, hour, minute, 0)
-            solar = lunar.getSolar()
-        else:
-            solar = Solar.fromYmdHms(year, month, day, hour, minute, 0)
-            lunar = solar.getLunar()
+            return lunar.getSolar(), lunar, time_unknown
+        solar = Solar.fromYmdHms(year, month, day, hour, minute, 0)
+        return solar, solar.getLunar(), time_unknown
     except Exception as error:
         raise RuntimeError("calendar_conversion_failed") from error
+
+
+def _build_chart_from_calendar(
+    profile: Dict[str, Any], solar: Any, lunar: Any, time_unknown: bool
+) -> Dict[str, Any]:
+    """用给定的历法时刻生成一份完整四柱；民用时间和真太阳时共用同一计算器。"""
 
     eight_char = lunar.getEightChar()
     # lunar_python 的 sect=1 对应 reference 的“晚子时换日”，sect=2 为不换日口径。
@@ -1144,8 +1270,99 @@ def build_bazi_chart(profile: Dict[str, Any]) -> Dict[str, Any]:
             "cycles": dayun,
         },
         "time_unknown": time_unknown,
-        "solar_time_note": "出生地已记录；真太阳时边界需结合经度另行复核。",
     }
+
+
+def _pillar_values(chart: Dict[str, Any]) -> list[str]:
+    return [f"{pillar['stem']}{pillar['branch']}" for pillar in chart["pillars"]]
+
+
+def build_bazi_chart(profile: Dict[str, Any]) -> Dict[str, Any]:
+    """按 bazi-skill 口径排盘；有经度时以真太阳时为主，并保留民用时间复核盘。"""
+
+    civil_solar, civil_lunar, time_unknown = _create_civil_calendar(profile)
+    civil_chart = _build_chart_from_calendar(
+        profile, civil_solar, civil_lunar, time_unknown
+    )
+    location = _resolve_birth_location(profile)
+    civil_time = _solar_as_datetime(civil_solar)
+    review: Dict[str, Any] = {
+        "applied": False,
+        "basis": "civil_time",
+        "location_source": location["source"],
+        "location_name": location["name"],
+        "longitude": location["longitude"],
+        "timezone": location["timezone"],
+        "civil_time": civil_solar.toYmdHms(),
+        "true_solar_time": None,
+        "correction_minutes": None,
+        "equation_of_time_minutes": None,
+        "civil_pillars": _pillar_values(civil_chart),
+        "true_solar_pillars": _pillar_values(civil_chart),
+        "pillar_changed": False,
+        "changed_pillars": [],
+        "review_required": time_unknown or profile.get("time_precision") == "approximate",
+        "reason": "时辰未知，保留六字结构；无法做精确真太阳时校正。"
+        if time_unknown
+        else "未识别出生地经度；请补充经度后再做真太阳时复核。",
+    }
+    chart = civil_chart
+
+    if not time_unknown and location["longitude"] is not None:
+        zone = ZoneInfo(location["timezone"])
+        offset = civil_time.replace(tzinfo=zone).utcoffset()
+        timezone_minutes = int(offset.total_seconds() // 60) if offset else 480
+        equation_minutes = _equation_of_time_minutes(civil_time)
+        correction_minutes = location["longitude"] * 4 - timezone_minutes + equation_minutes
+        true_time = civil_time + timedelta(minutes=correction_minutes)
+        true_solar = Solar.fromYmdHms(
+            true_time.year, true_time.month, true_time.day,
+            true_time.hour, true_time.minute, true_time.second,
+        )
+        true_chart = _build_chart_from_calendar(
+            profile, true_solar, true_solar.getLunar(), time_unknown
+        )
+        civil_pillars = _pillar_values(civil_chart)
+        true_pillars = _pillar_values(true_chart)
+        changed_pillars = [
+            PILLAR_LABELS[index]
+            for index, (civil, corrected) in enumerate(zip(civil_pillars, true_pillars))
+            if civil != corrected
+        ]
+        chart = true_chart
+        review = {
+            "applied": True,
+            "basis": "true_solar_time",
+            "location_source": location["source"],
+            "location_name": location["name"],
+            "longitude": round(location["longitude"], 4),
+            "timezone": location["timezone"],
+            "civil_time": civil_solar.toYmdHms(),
+            "true_solar_time": true_solar.toYmdHms(),
+            "correction_minutes": round(correction_minutes, 1),
+            "equation_of_time_minutes": round(equation_minutes, 1),
+            "civil_pillars": civil_pillars,
+            "true_solar_pillars": true_pillars,
+            "pillar_changed": bool(changed_pillars),
+            "changed_pillars": changed_pillars,
+            "review_required": bool(changed_pillars)
+            or profile.get("time_precision") == "approximate",
+            "reason": (
+                f"真太阳时校正后{('、'.join(changed_pillars))}发生变化，请以双盘复核。"
+                if changed_pillars
+                else "真太阳时已参与计算；本例四柱未跨越节气、日界或时辰边界。"
+            ),
+        }
+
+    chart["civil_solar_date"] = civil_solar.toYmdHms()
+    chart["civil_lunar_date"] = civil_lunar.toString()
+    chart["solar_time_review"] = review
+    chart["solar_time_note"] = review["reason"]
+    chart["calculation_standard"] = {
+        **chart["calculation_standard"],
+        "time": "真太阳时校正后排盘" if review["applied"] else "民用时间排盘（待真太阳时复核）",
+    }
+    return chart
 
 
 def _safe_text(value: Any, limit: int = 240) -> str:
@@ -1166,6 +1383,8 @@ def sanitise_profile(payload: Dict[str, Any]) -> Dict[str, str]:
         "birth_time": _safe_text(payload.get("birth_time"), 12),
         "time_precision": _safe_text(payload.get("time_precision"), 16) or "exact",
         "birth_place": _safe_text(payload.get("birth_place"), 80),
+        "birth_longitude": _safe_text(payload.get("birth_longitude"), 20),
+        "birth_timezone": _safe_text(payload.get("birth_timezone"), 64),
         "life_status": _safe_text(payload.get("life_status"), 16) or "alive",
         "death_year": _safe_text(payload.get("death_year"), 8),
         "leap_month": "true"

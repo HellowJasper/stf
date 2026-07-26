@@ -508,6 +508,72 @@ class ResponseLogicTests(unittest.TestCase):
         )
         self.assertEqual(len(first["yun"]["cycles"]), 8)
 
+    def test_city_location_applies_true_solar_time_without_changing_stable_pillars(self):
+        chart = server.build_bazi_chart(
+            {
+                "name": "南京样例", "gender": "男", "calendar_type": "solar",
+                "birth_date": "1985-06-18", "birth_time": "09:30",
+                "time_precision": "exact", "birth_place": "江苏省南京市",
+            }
+        )
+
+        review = chart["solar_time_review"]
+        self.assertTrue(review["applied"])
+        self.assertEqual(review["location_source"], "city_preset")
+        self.assertEqual(review["location_name"], "江苏省南京市")
+        self.assertEqual(review["civil_pillars"], review["true_solar_pillars"])
+        self.assertFalse(review["pillar_changed"])
+        self.assertIn("真太阳时", chart["calculation_standard"]["time"])
+
+    def test_true_solar_time_exposes_dual_chart_when_location_crosses_boundaries(self):
+        chart = server.build_bazi_chart(
+            {
+                "name": "乌鲁木齐样例", "gender": "男", "calendar_type": "solar",
+                "birth_date": "1985-06-18", "birth_time": "01:00",
+                "time_precision": "exact", "birth_place": "新疆乌鲁木齐市",
+            }
+        )
+
+        review = chart["solar_time_review"]
+        self.assertTrue(review["applied"])
+        self.assertLess(review["correction_minutes"], -120)
+        self.assertTrue(review["pillar_changed"])
+        self.assertEqual(review["changed_pillars"], ["日柱", "时柱"])
+        self.assertEqual(review["civil_pillars"], ["乙丑", "壬午", "戊子", "癸丑"])
+        self.assertEqual(review["true_solar_pillars"], ["乙丑", "壬午", "丁亥", "辛亥"])
+        self.assertEqual(
+            [f"{item['stem']}{item['branch']}" for item in chart["pillars"]],
+            review["true_solar_pillars"],
+        )
+
+    def test_manual_longitude_can_enable_true_solar_time_for_unlisted_place(self):
+        chart = server.build_bazi_chart(
+            {
+                "name": "手动经度样例", "gender": "女", "calendar_type": "solar",
+                "birth_date": "1990-02-14", "birth_time": "20:10",
+                "time_precision": "exact", "birth_place": "未收录地点",
+                "birth_longitude": "87.6168", "birth_timezone": "Asia/Shanghai",
+            }
+        )
+
+        review = chart["solar_time_review"]
+        self.assertTrue(review["applied"])
+        self.assertEqual(review["location_source"], "manual_longitude")
+        self.assertEqual(review["timezone"], "Asia/Shanghai")
+
+    def test_unknown_time_keeps_six_charters_without_fake_true_solar_precision(self):
+        chart = server.build_bazi_chart(
+            {
+                "name": "未知时辰样例", "gender": "女", "calendar_type": "solar",
+                "birth_date": "1996-11-03", "birth_time": "",
+                "time_precision": "unknown", "birth_place": "浙江省杭州市",
+            }
+        )
+
+        self.assertFalse(chart["solar_time_review"]["applied"])
+        self.assertTrue(chart["solar_time_review"]["review_required"])
+        self.assertEqual(chart["pillars"][3]["stem"], "？")
+
     def test_vendored_bazi_skill_is_loaded_as_runtime_contract(self):
         """不能再用一个写死的 skill 名称冒充运行时接入。"""
 
