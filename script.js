@@ -173,6 +173,9 @@ const patienceToast = document.querySelector("#patience-toast");
 const composerTurnLabel = document.querySelector("#composer-turn-label");
 const cheatConsole = document.querySelector(".cheat-console");
 const cheatSwitch = document.querySelector("#cheat-switch");
+const mobileBuffBar = document.querySelector("#mobile-buff-bar");
+const mobileCheatSwitch = document.querySelector("#mobile-cheat-switch");
+const mobileOpenMysticButton = document.querySelector("#mobile-open-mystic");
 const baziLockTitle = document.querySelector("#bazi-lock-title");
 const baziLockCopy = document.querySelector("#bazi-lock-copy");
 const baziProfile = document.querySelector("#bazi-profile");
@@ -222,6 +225,7 @@ const skillChartName = document.querySelector("#skill-chart-name");
 const skillSolarDate = document.querySelector("#skill-solar-date");
 const skillLunarDate = document.querySelector("#skill-lunar-date");
 const skillCalendarStandard = document.querySelector("#skill-calendar-standard");
+const pillarTableWrap = document.querySelector(".pillar-table-wrap");
 const skillPillarTable = document.querySelector("#skill-pillar-table");
 const skillDayMaster = document.querySelector("#skill-day-master");
 const skillStrength = document.querySelector("#skill-strength");
@@ -287,6 +291,10 @@ const BOOT_SEQUENCE_MS = 7200;
 let bootFinished = false;
 let bootProgressFrame = 0;
 let bootTimers = [];
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 const PATIENCE_STORAGE_KEY = "stf-daily-patience-v1";
 const INITIAL_PATIENCE_BALANCE = 68;
@@ -528,11 +536,12 @@ function scrollChatToBottom({ force = false, behavior = "auto" } = {}) {
     return;
   }
   requestAnimationFrame(() => {
+    const resolvedBehavior = prefersReducedMotion() ? "auto" : behavior;
     chatScrollProgrammatic = true;
     chatAutoFollow = true;
-    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior });
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: resolvedBehavior });
     updateChatScrollState();
-    releaseProgrammaticChatScroll(behavior === "smooth" ? 520 : 80);
+    releaseProgrammaticChatScroll(resolvedBehavior === "smooth" ? 520 : 80);
   });
 }
 
@@ -647,18 +656,32 @@ function renderScenario(key) {
     renderLiveTranscript();
   }
 
-  opponentMessage.closest(".message-row").animate(
-    [
-      { opacity: 0, transform: "translateY(10px)" },
-      { opacity: 1, transform: "translateY(0)" },
-    ],
-    { duration: 320, easing: "cubic-bezier(.2,.9,.22,1.18)" },
-  );
+  if (!prefersReducedMotion()) {
+    opponentMessage.closest(".message-row").animate(
+      [
+        { opacity: 0, transform: "translateY(10px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      { duration: 320, easing: "cubic-bezier(.2,.9,.22,1.18)" },
+    );
+  }
 }
 
 function resetCheatLoadingCopy() {
   baziLockTitle.textContent = "点击开启今日外挂";
   baziLockCopy.textContent = "开启后，对方反馈会多一层角色校准";
+}
+
+function syncMobileBuffBar() {
+  mobileBuffBar.classList.toggle("is-active", cheatEnabled);
+  mobileBuffBar.classList.toggle("is-loading", cheatLoading);
+  mobileCheatSwitch.disabled = cheatLoading;
+  mobileCheatSwitch.setAttribute("aria-checked", String(cheatEnabled));
+  mobileCheatSwitch.querySelector("strong").textContent = cheatLoading
+    ? "校准中"
+    : cheatEnabled
+      ? "外挂已开"
+      : "开启外挂";
 }
 
 function cancelCheatLoading() {
@@ -669,6 +692,7 @@ function cancelCheatLoading() {
   cheatSwitch.disabled = false;
   cheatSwitch.removeAttribute("aria-busy");
   resetCheatLoadingCopy();
+  syncMobileBuffBar();
 }
 
 function setCheatEnabled(nextEnabled, { silent = false } = {}) {
@@ -680,6 +704,7 @@ function setCheatEnabled(nextEnabled, { silent = false } = {}) {
   baziProfile.setAttribute("aria-hidden", String(!cheatEnabled));
   renderBaziProfile();
   updateChatRewindUI();
+  syncMobileBuffBar();
 
   if (silent) return;
   if (cheatEnabled) {
@@ -710,6 +735,7 @@ function toggleCheat() {
   baziLockTitle.textContent = `正在校准${scenarios[activeScenario].sender}的沟通命盘`;
   baziLockCopy.textContent = `预计 ${(delay / 1000).toFixed(1)} 秒 · 正在匹配雷点与顺毛开关`;
   composerStatus.textContent = "八字外挂加载中，当前消息暂不会自动带上外挂。";
+  syncMobileBuffBar();
 
   cheatLoadingTimer = window.setTimeout(() => {
     cheatLoadingTimer = 0;
@@ -1390,20 +1416,31 @@ function clearMysticEntryTimers() {
   mysticEntryFinishTimer = 0;
 }
 
+function setMysticContentInert(inert) {
+  mysticLab.querySelectorAll(
+    ":scope > .mystic-header, :scope > .mystic-steps, :scope > .mystic-workbench, :scope > .mystic-results, :scope > .mystic-disclaimer",
+  ).forEach((node) => {
+    node.inert = inert;
+  });
+}
+
 function playMysticEntry() {
   clearMysticEntryTimers();
   mysticLab.classList.remove("is-awake", "is-entering", "is-revealing", "is-revealed");
 
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (prefersReducedMotion()) {
     mysticEntry.hidden = true;
+    setMysticContentInert(false);
     mysticLab.classList.add("is-awake", "is-revealed");
     window.setTimeout(() => closeMysticLabButton.focus(), 30);
     return;
   }
 
+  setMysticContentInert(true);
   mysticEntry.hidden = false;
   void mysticEntry.offsetWidth;
   mysticLab.classList.add("is-entering");
+  requestAnimationFrame(() => mysticEntry.focus({ preventScroll: true }));
   mysticEntryRevealTimer = window.setTimeout(() => {
     mysticLab.classList.add("is-revealing", "is-awake");
   }, MYSTIC_ENTRY_REVEAL_MS);
@@ -1411,15 +1448,18 @@ function playMysticEntry() {
     mysticLab.classList.remove("is-entering", "is-revealing");
     mysticLab.classList.add("is-revealed");
     mysticEntry.hidden = true;
+    setMysticContentInert(false);
     closeMysticLabButton.focus();
   }, MYSTIC_ENTRY_FINISH_MS);
 }
 
 function openMysticLab() {
   previousFocus = document.activeElement;
+  setPatienceLedgerOpen(false);
   mysticLab.hidden = false;
   mysticLab.inert = false;
   mysticLab.setAttribute("aria-hidden", "false");
+  setMysticBackgroundInert(true);
   document.body.classList.add("mystic-is-open");
   mysticLab.scrollTop = 0;
   fillCurrentOpponent();
@@ -1434,10 +1474,42 @@ function closeMysticLab() {
   mysticLab.hidden = true;
   mysticLab.inert = true;
   mysticLab.setAttribute("aria-hidden", "true");
+  setMysticBackgroundInert(false);
   document.body.classList.remove("mystic-is-open");
   mysticEntry.hidden = true;
+  setMysticContentInert(false);
   mysticLab.classList.remove("is-awake", "is-entering", "is-revealing", "is-revealed");
   previousFocus?.focus?.();
+}
+
+function setMysticBackgroundInert(inert) {
+  document.querySelectorAll(
+    "body > .skip-link, body > .ticker, body > .masthead, body > .demo-layout, body > .page-footer",
+  ).forEach((node) => {
+    node.inert = inert;
+  });
+}
+
+function trapMysticFocus(event) {
+  if (event.key !== "Tab" || mysticLab.hidden) return;
+  if (!mysticEntry.hidden) {
+    event.preventDefault();
+    mysticEntry.focus({ preventScroll: true });
+    return;
+  }
+  const focusable = [...mysticLab.querySelectorAll(
+    "button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [href], [tabindex]:not([tabindex='-1'])",
+  )].filter((node) => !node.hidden && !node.closest("[inert]") && node.getClientRects().length > 0);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && (document.activeElement === first || !mysticLab.contains(document.activeElement))) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function profileFromForm() {
@@ -1557,6 +1629,15 @@ function renderProfessionalChart(result) {
     appendTableRow("五行", pillars.map((pillar) => `${pillar.stem_element} / ${pillar.branch_element}`)),
   );
   skillPillarTable.replaceChildren(caption, head, body);
+  requestAnimationFrame(() => {
+    if (!window.matchMedia("(max-width: 900px)").matches) return;
+    const dayMasterCell = skillPillarTable.querySelector(".day-master-cell");
+    if (!dayMasterCell) return;
+    pillarTableWrap.scrollLeft = Math.max(
+      0,
+      dayMasterCell.offsetLeft - ((pillarTableWrap.clientWidth - dayMasterCell.offsetWidth) / 2),
+    );
+  });
 
   skillDayMaster.textContent = `${chart.day_master.polarity}${chart.day_master.element} · ${chart.day_master.stem}`;
   skillStrength.textContent = analysis.strength;
@@ -1680,7 +1761,7 @@ async function generateMysticProfile(event) {
     chartStatus.textContent = result.source === "deepseek-v4"
       ? "lunar_python 排盘 · DeepSeek V4-Pro 解读完成"
       : "lunar_python 排盘 · 本地解读完成";
-    mysticResults.scrollIntoView({ behavior: "smooth", block: "start" });
+    mysticResults.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
     runLiveAnalysis();
   } catch (error) {
     window.clearInterval(messageTimer);
@@ -1778,6 +1859,8 @@ chatScrollObserver.observe(chatWindow, { childList: true, subtree: true, charact
 
 bootSkipButton.addEventListener("click", () => finishBootSequence());
 cheatSwitch.addEventListener("click", toggleCheat);
+mobileCheatSwitch.addEventListener("click", toggleCheat);
+mobileOpenMysticButton.addEventListener("click", openMysticLab);
 composer.addEventListener("submit", submitMessage);
 copyReply.addEventListener("click", copyCurrentReply);
 chatRewindButton.addEventListener("click", startChatRewind);
@@ -1795,6 +1878,7 @@ birthForm.addEventListener("submit", generateMysticProfile);
 refreshLiveAnalysisButton.addEventListener("click", runLiveAnalysis);
 liveChatForm.addEventListener("submit", addLiveMessage);
 mysticLab.addEventListener("pointermove", updateMysticParallax, { passive: true });
+mysticLab.addEventListener("keydown", trapMysticFocus);
 mysticLab.addEventListener("pointerleave", () => {
   mysticLab.style.setProperty("--pointer-x", "72%");
   mysticLab.style.setProperty("--pointer-y", "34%");
@@ -1830,6 +1914,7 @@ buildEntryRing(entryStems, heavenlyStems);
 buildMysticAmbience();
 syncBirthFormState();
 syncAnalysisObjectName();
+syncMobileBuffBar();
 persistPatienceState();
 renderPatienceState();
 renderScenario(activeScenario);

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="工位开挂局——把难聊的话，聊出爽感。职场沟通与八字外挂体验 Demo。"
@@ -13,7 +13,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ffe600'/%3E%3Cpath d='M13 14h38v36H13z' fill='%23131313'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='28' font-family='sans-serif' font-weight='900' fill='%23ffe600'%3E爽%3C/text%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260726-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260726-4" />
   </head>
   <body class="is-booting">
     <section class="boot-screen" id="boot-screen" data-stage="1" aria-label="工位开挂局正在启动" aria-live="polite" aria-atomic="true">
@@ -25,7 +25,7 @@
 
       <div class="boot-screen__coordinates" aria-hidden="true">
         <span>职场对话拆招 DEMO</span>
-        <span>DESKTOP · 01</span>
+        <span>WEB · 01</span>
       </div>
 
       <div class="boot-screen__stage">
@@ -205,6 +205,32 @@
           <p>这不是教你吵架，是教你把边界说清楚，还能顺手爽一下。</p>
         </div>
       </aside>
+
+      <section class="mobile-buff-bar" id="mobile-buff-bar" aria-label="移动端可选增益">
+        <div class="mobile-buff-bar__copy">
+          <span>02 · 可选增益</span>
+          <strong>需要玄学加成？</strong>
+        </div>
+        <button
+          class="mobile-cheat-switch"
+          id="mobile-cheat-switch"
+          type="button"
+          role="switch"
+          aria-checked="false"
+        >
+          <span aria-hidden="true">挂</span>
+          <strong>开启外挂</strong>
+        </button>
+        <button
+          class="mobile-mystic-open"
+          id="mobile-open-mystic"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="mystic-lab"
+        >
+          完整排盘 <span aria-hidden="true">↗</span>
+        </button>
+      </section>
 
       <section class="conversation-stage" aria-labelledby="conversation-title">
         <header class="conversation-stage__header">
@@ -548,7 +574,16 @@
           </g>
         </svg>
       </div>
-      <div class="mystic-entry" id="mystic-entry" aria-hidden="true" hidden>
+      <div
+        class="mystic-entry"
+        id="mystic-entry"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label="正在进入玄学分析图"
+        tabindex="-1"
+        hidden
+      >
         <div class="mystic-entry__freeze-grid"></div>
         <div class="mystic-entry__compass">
           <div class="mystic-entry__rotor mystic-entry__rotor--outer"></div>
@@ -750,6 +785,7 @@
 
           <div class="professional-chart__body">
             <div class="pillar-table-wrap">
+              <p class="mobile-table-hint">← 左右滑动查看完整四柱，已优先定位日主 →</p>
               <table class="skill-pillar-table" id="skill-pillar-table">
                 <caption>四柱、十神与藏干</caption>
               </table>
@@ -892,6 +928,6 @@
       <p class="noscript-message">请启用 JavaScript 以体验职场对话拆招 Demo。</p>
     </noscript>
 
-    <script src="./script.js?v=20260726-3" defer></script>
+    <script src="./script.js?v=20260726-4" defer></script>
   </body>
 </html>
