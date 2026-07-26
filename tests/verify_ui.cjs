@@ -201,6 +201,7 @@ function assert(condition, message) {
     })));
     assert(maxGlyphTilt < 0.1, `天干地支文字仍有倾斜：${maxGlyphTilt}°`);
     assert(await page.locator("#birth-former-name").isVisible(), "bazi-skill 要求的曾用名字段没有嵌入");
+    assert(await page.locator("#birth-former-name-year").isVisible(), "曾用名缺少可选改名年份");
     await page.locator("#birth-time-precision").selectOption("unknown");
     assert(await page.locator("#birth-time").isDisabled(), "时辰不确定时仍强制输入出生时间");
     await page.locator("#birth-time-precision").selectOption("exact");
@@ -208,20 +209,36 @@ function assert(condition, message) {
     await page.locator("#birth-calendar").selectOption("lunar");
     assert(await page.locator("#leap-month-field").isVisible(), "农历模式没有提供闰月确认");
     await page.locator("#birth-calendar").selectOption("solar");
+    await page.locator("#birth-name").fill("自定义对手");
+    await page.locator("#birth-former-name").fill("旧称甲");
+    await page.locator("#birth-former-name-year").fill("2018");
+    await page.locator("#birth-date").fill("1990-02-14");
+    await page.locator("#birth-time").fill("20:10");
     await page.screenshot({ path: path.join(artifacts, "mystic-lab-input.png") });
 
     await page.locator("#chart-button").click();
     await page.locator("#mystic-results").waitFor({ state: "visible", timeout: 60000 });
     assert((await page.locator("#chart-pillars .chart-pillar").count()) === 4, "四柱排盘摘要不完整");
     assert((await page.locator("#skill-pillar-table tbody tr").count()) === 5, "bazi-skill 专业排盘表不完整");
-    assert((await page.locator("#skill-pillar-table .pillar-row--stem td").allTextContents()).join("") === "乙壬戊丁", "历法引擎没有输出预期的真实天干");
-    assert((await page.locator("#skill-pillar-table .day-master-cell").textContent()).includes("戊"), "日主天干没有被单独标记");
+    assert((await page.locator("#skill-pillar-table .pillar-row--stem td").allTextContents()).join("") === "庚戊庚丙", "历法引擎没有输出自定义出生日期对应的真实天干");
+    assert((await page.locator("#skill-pillar-table .day-master-cell").textContent()).includes("庚"), "日主天干没有被单独标记");
     assert((await page.locator("#skill-pillar-table .day-pillar-heading small").textContent()).trim() === "日主所在", "日柱表头没有说明日主位置");
     const dayMasterMotion = await page.locator("#skill-pillar-table .day-master-cell").evaluate((node) => getComputedStyle(node).animationName);
     assert(dayMasterMotion.includes("day-master-focus"), "日主核心格没有呼吸高亮动效");
     assert((await page.locator("#element-balance .element-meter").count()) === 5, "五行分布没有完整渲染");
     assert((await page.locator("#dayun-track .dayun-cycle").count()) === 8, "八步大运没有完整渲染");
-    assert((await page.locator("#skill-day-master").textContent()).includes("阳土"), "日主诊断没有渲染");
+    assert((await page.locator("#skill-day-master").textContent()).includes("阳金"), "日主诊断没有渲染自定义命盘");
+    assert((await page.locator("#skill-runtime-card").getAttribute("data-state")) === "loaded", "结果页没有展示可验证的 bazi-skill 运行态");
+    assert((await page.locator("#skill-runtime-status").textContent()).includes("Skill 运行时已加载"), "来源卡没有明确说明 Skill 已真实加载");
+    assert((await page.locator("#skill-runtime-count").textContent()).trim() === "4/4", "bazi-skill 四份参考文件没有完整加载");
+    assert((await page.locator("#skill-runtime-version").textContent()).includes("SHA"), "来源卡没有展示 Skill 契约文件指纹");
+    assert((await page.locator("#skill-runtime-references li").count()) === 4, "来源卡没有逐项展示四份参考文件");
+    assert((await page.locator("#skill-strength-evidence li").count()) >= 3, "旺衰证据链没有完整展示");
+    assert((await page.locator("#skill-pattern-analysis").textContent()).trim().length > 20, "格局依据没有展示");
+    assert((await page.locator("#skill-climate-analysis").textContent()).trim().length > 12, "调候复核没有展示");
+    assert((await page.locator("#skill-current-dayun").textContent()).trim().length > 20, "当前大运分析没有展示");
+    assert((await page.locator("#skill-current-year").textContent()).trim().length > 20, "流年分析没有展示");
+    assert((await page.locator("#skill-historical-calibration li").count()) >= 3, "历史事件校准问题没有展示");
     assert((await page.locator("#profile-likes li").count()) === 3, "沟通偏好分析不完整");
     assert((await page.locator("#profile-fears li").count()) === 3, "雷区分析不完整");
     assert((await page.locator("[data-mystic-step]").count()) === 4, "玄学分析台应只保留四个分析步骤");
@@ -242,6 +259,35 @@ function assert(condition, message) {
 
     await page.locator("#close-mystic-lab").click();
     await page.locator("#mystic-lab").waitFor({ state: "hidden", timeout: 3000 });
+
+    await page.locator("#cheat-switch").click();
+    await page.waitForFunction(() => document.querySelector("#cheat-switch").getAttribute("aria-checked") === "true");
+    assert(await page.locator("#bazi-profile-takeover").isVisible(), "自定义命盘完成后右侧外挂没有显示接管状态");
+    assert((await page.locator("#bazi-profile-takeover").textContent()).includes("专业排盘已接管外挂"), "自定义命盘接管提示不明确");
+    assert((await page.locator("#bazi-profile-source").textContent()).includes("自定义对手"), "外挂缩略区没有显示自定义分析对象");
+    assert((await page.locator("#pillar-grid").textContent()).includes("庚午"), "外挂缩略区仍在使用当前场景的演示四柱");
+    assert((await page.locator("#element-label").textContent()).includes("庚日主"), "外挂缩略区没有显示自定义日主");
+    assert((await page.locator("#compatibility-label").textContent()).includes("娱乐"), "沟通适配度没有明确娱乐属性");
+    assert((await page.locator("#trigger-copy").textContent()).trim().length > 3, "外挂缩略区没有显示自定义雷点");
+    assert((await page.locator("#delight-copy").textContent()).trim().length > 3, "外挂缩略区没有显示自定义偏好");
+    assert((await page.locator("#strategy-copy").textContent()).trim().length > 8, "外挂缩略区没有显示自定义沟通策略");
+
+    const customRequestPromise = page.waitForRequest((request) => (
+      request.method() === "POST" && request.url().includes("/api/respond")
+    ));
+    await page.locator("#user-message").fill("这是一条验证自定义专业命盘接管的消息。");
+    await page.locator("#send-button").click();
+    const customRequest = await customRequestPromise;
+    const customPayload = customRequest.postDataJSON();
+    const customBaziProfile = customPayload.bazi_profile;
+    assert(Object.keys(customBaziProfile).sort().join(",") === "analysis,chart,profile_name", "聊天请求没有使用最小化的安全命盘契约");
+    assert(customBaziProfile.profile_name === "自定义对手", "聊天请求没有携带自定义命盘对象名");
+    assert(customBaziProfile.chart.day_master.stem === "庚", "聊天请求仍在使用场景静态日主");
+    assert(customBaziProfile.analysis.analysis_as_of_year === new Date().getFullYear(), "聊天请求丢失命盘分析截止年");
+    assert(customBaziProfile.chart.pillars.map((pillar) => `${pillar.stem}${pillar.branch}`).join("·") !== "乙丑·壬午·戊子·丁巳", "聊天请求仍在使用王总的静态演示四柱");
+    assert(!Object.hasOwn(customBaziProfile, "birth_date") && !Object.hasOwn(customBaziProfile, "birth_place"), "聊天请求泄露了原始生日或地点字段");
+    assert(!JSON.stringify(customBaziProfile).includes("江苏省南京市"), "聊天命盘载荷泄露了出生地点");
+    await page.getByRole("button", { name: /友善同事局/ }).click();
 
     assert(errors.length === 0, `浏览器错误：${errors.join(" | ")}`);
     console.log(JSON.stringify({

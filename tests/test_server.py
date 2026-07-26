@@ -1,4 +1,5 @@
 import json
+import re
 import threading
 import unittest
 import urllib.error
@@ -232,7 +233,8 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertEqual(result["reply"], generated["suggested_next_message"])
         self.assertEqual(result["character_profile"]["traits"], generated["character_profile"]["traits"])
         self.assertIn("戊 · 阳土", result["professional_bazi"]["day_master"])
-        self.assertIn("戊土日主", result["professional_bazi"]["communication_translation"])
+        self.assertNotIn("戊土日主", result["professional_bazi"]["communication_translation"])
+        self.assertIn("先结论后选择", result["professional_bazi"]["communication_translation"])
         self.assertTrue(sent_data["bazi_enabled"])
         self.assertEqual(sent_data["bazi_profile"]["trigger"], "公开否定")
         self.assertEqual(sent_data["professional_bazi"]["pillars"][0]["ganzhi"], "乙丑")
@@ -506,6 +508,469 @@ class ResponseLogicTests(unittest.TestCase):
         )
         self.assertEqual(len(first["yun"]["cycles"]), 8)
 
+    def test_vendored_bazi_skill_is_loaded_as_runtime_contract(self):
+        """不能再用一个写死的 skill 名称冒充运行时接入。"""
+
+        bundle = server.BAZI_SKILL_BUNDLE
+        self.assertEqual(bundle["name"], "jinchenma94/bazi-skill")
+        self.assertEqual(
+            bundle["source_revision"],
+            "bdd7f863d4450bf0e2fac84579ad6b45cfdfa25c",
+        )
+        self.assertIn("第一阶段：信息收集", bundle["skill"])
+        self.assertEqual(
+            bundle["contract_hash"],
+            "ee9f48acda7cd237b4d04789ea2815cf37a14849cd300b4ad529739928017386",
+        )
+        self.assertEqual(
+            set(bundle["references"]),
+            {
+                "wuxing-tables.md",
+                "shichen-table.md",
+                "dayun-rules.md",
+                "classical-texts.md",
+            },
+        )
+        self.assertTrue(
+            all(len(value) == 64 for value in bundle["reference_hashes"].values())
+        )
+
+    def test_skill_structural_analysis_changes_with_month_command(self):
+        """同日主但不同月令不能再得到完全相同的命理解读。"""
+
+        base = {
+            "name": "虚构对象",
+            "gender": "男",
+            "calendar_type": "solar",
+            "birth_time": "09:30",
+            "time_precision": "exact",
+            "birth_place": "江苏省南京市",
+            "life_status": "alive",
+            "leap_month": "false",
+        }
+        profiles = [
+            {**base, "birth_date": "1985-06-18"},
+            {**base, "birth_date": "1985-08-17"},
+        ]
+        charts = [server.build_bazi_chart(profile) for profile in profiles]
+        analyses = [
+            server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+            for profile, chart in zip(profiles, charts)
+        ]
+
+        self.assertEqual(
+            [chart["day_master"]["stem"] for chart in charts], ["戊", "戊"]
+        )
+        self.assertNotEqual(
+            analyses[0]["strength_evidence"], analyses[1]["strength_evidence"]
+        )
+        self.assertNotEqual(analyses[0]["pattern"], analyses[1]["pattern"])
+
+    def test_mystic_profile_exposes_real_skill_trace_and_full_contract(self):
+        profile = {
+            "name": "虚构对象",
+            "gender": "男",
+            "calendar_type": "solar",
+            "birth_date": "1985-06-18",
+            "birth_time": "09:30",
+            "time_precision": "exact",
+            "birth_place": "江苏省南京市",
+            "life_status": "alive",
+        }
+        with patch.dict(
+            "server.os.environ", {"DEEPSEEK_DISABLE_KEYCHAIN": "1"}, clear=True
+        ):
+            result = server.generate_mystic_profile(profile, [])
+
+        provenance = result["provenance"]
+        self.assertTrue(provenance["skill_runtime_loaded"])
+        self.assertEqual(provenance["skill"], "jinchenma94/bazi-skill")
+        self.assertEqual(len(provenance["references_loaded"]), 4)
+        self.assertEqual(provenance["calendar_engine"], "lunar_python@1.4.8")
+        for key in (
+            "strength_evidence",
+            "pattern_analysis",
+            "current_dayun_analysis",
+            "current_year_analysis",
+            "historical_calibration",
+        ):
+            self.assertIn(key, result["analysis"])
+        self.assertGreaterEqual(len(result["analysis"]["historical_calibration"]), 3)
+
+    def test_custom_mystic_chart_can_drive_main_chat_bazi_profile(self):
+        profile = {
+            "name": "自定义对手",
+            "gender": "女",
+            "calendar_type": "solar",
+            "birth_date": "1990-02-14",
+            "birth_time": "20:10",
+            "time_precision": "exact",
+            "birth_place": "北京市朝阳区",
+            "life_status": "alive",
+        }
+        chart = server.build_bazi_chart(profile)
+        analysis = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+        supplied = {"chart": chart, "analysis": analysis, "profile_name": profile["name"]}
+
+        chat_profile = server.build_workplace_bazi_profile("boss", supplied)
+
+        day_master = chart["day_master"]
+        self.assertEqual(
+            chat_profile["day_master"],
+            f"{day_master['stem']} · {day_master['polarity']}{day_master['element']}",
+        )
+        self.assertEqual(chat_profile["profile_name"], "自定义对手")
+        self.assertEqual(chat_profile["skill_runtime"], "已加载 4/4 参考文件")
+
+    def test_deepseek_can_translate_but_cannot_override_skill_facts(self):
+        profile = {
+            "name": "虚构对象",
+            "gender": "男",
+            "calendar_type": "solar",
+            "birth_date": "1985-06-18",
+            "birth_time": "09:30",
+            "time_precision": "exact",
+            "birth_place": "江苏省南京市",
+            "life_status": "alive",
+        }
+        chart = server.build_bazi_chart(profile)
+        deterministic = server.build_bazi_skill_analysis(
+            profile, chart, as_of_year=2026
+        )
+        generated = {
+            "day_master_analysis": "模型试图改写日主结论",
+            "strength": "模型试图改成从强",
+            "pattern": "模型试图改写格局",
+            "climate_analysis": "模型试图改写调候",
+            "favorable_elements": ["模型喜神"],
+            "unfavorable_elements": ["模型忌神"],
+            "classic_reference": "模型伪造典籍",
+            "summary": "AI 只负责把结构翻译成沟通摘要。",
+            "personality": "沟通画像转译",
+            "likes": ["明确结论", "可选路径", "及时反馈"],
+            "fears": ["边界模糊", "公开否定", "临时变更"],
+            "topics": ["推进节点", "验收口径", "资源安排"],
+            "advice": "先给结论，再给选项。",
+            "script": "我先给结论，再请您从两个路径里拍板。",
+        }
+
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ) as deepseek:
+            result = server.generate_mystic_profile(profile, [])
+
+        self.assertEqual(result["analysis"]["strength"], deterministic["strength"])
+        self.assertEqual(result["analysis"]["pattern"], deterministic["pattern"])
+        self.assertEqual(
+            result["analysis"]["climate_analysis"],
+            deterministic["climate_analysis"],
+        )
+        self.assertEqual(
+            result["analysis"]["favorable_elements"],
+            deterministic["favorable_elements"],
+        )
+        self.assertEqual(
+            result["analysis"]["classic_reference"],
+            deterministic["classic_reference"],
+        )
+        self.assertEqual(result["analysis"]["summary"], generated["summary"])
+        sent_prompt, sent_payload = deepseek.call_args.args[:2]
+        self.assertIn("bazi-skill", sent_prompt)
+        self.assertEqual(
+            sent_payload["skill_analysis"]["strength"], deterministic["strength"]
+        )
+        self.assertEqual(sent_payload["subject"], {"name": "虚构对象", "life_status": "alive"})
+        self.assertNotIn("profile", sent_payload)
+        self.assertNotIn("1985-06-18", json.dumps(sent_payload, ensure_ascii=False))
+        self.assertNotIn("江苏省南京市", json.dumps(sent_payload, ensure_ascii=False))
+
+    def test_deceased_profile_does_not_analyse_years_after_death(self):
+        profile = {
+            "name": "历史虚构样例",
+            "gender": "女",
+            "calendar_type": "solar",
+            "birth_date": "1970-03-12",
+            "birth_time": "08:20",
+            "time_precision": "exact",
+            "birth_place": "陕西省西安市",
+            "life_status": "deceased",
+            "death_year": "2010",
+        }
+        chart = server.build_bazi_chart(profile)
+
+        analysis = server.build_bazi_skill_analysis(
+            profile, chart, as_of_year=2026
+        )
+
+        self.assertEqual(analysis["analysis_as_of_year"], 2010)
+        self.assertIn("2010", analysis["current_year_analysis"])
+
+    def test_runtime_rules_are_parsed_from_reference_and_drive_analysis(self):
+        rules = server.BAZI_SKILL_RULES
+        self.assertEqual(rules["stem_elements"]["甲"], "木")
+        self.assertEqual(rules["stem_polarity"]["癸"], "阴")
+        self.assertEqual(rules["branch_elements"]["午"], "火")
+        self.assertEqual(rules["growth_stages"]["戊"]["长生"], "寅")
+        self.assertEqual(rules["growth_stages"]["戊"]["帝旺"], "午")
+        self.assertEqual(rules["hidden_stem_weights"], (0.6, 0.3, 0.1))
+        self.assertTrue(rules["night_zi_next_day"])
+        self.assertEqual(rules["dayun_direction"][("阴", "男")], "逆排")
+
+        profile = {
+            "name": "规则使用样例", "gender": "男", "calendar_type": "solar",
+            "birth_date": "1985-06-18", "birth_time": "09:30",
+            "time_precision": "exact", "birth_place": "江苏省南京市",
+            "life_status": "alive",
+        }
+        chart = server.build_bazi_chart(profile)
+        with patch.dict(rules["branch_elements"], {"午": "水"}):
+            analysis = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+        self.assertIn("午月（水）", analysis["strength_evidence"][0])
+
+        night_profile = {**profile, "birth_time": "23:30"}
+        with patch.dict(rules, {"night_zi_next_day": False}):
+            no_rollover = server.build_bazi_chart(night_profile)
+        self.assertEqual(
+            f"{no_rollover['pillars'][2]['stem']}{no_rollover['pillars'][2]['branch']}",
+            "戊子",
+        )
+        with patch.dict(rules["dayun_direction"], {("阴", "男"): "顺排"}):
+            with self.assertRaisesRegex(RuntimeError, "dayun_direction_mismatch"):
+                server.build_bazi_chart(profile)
+
+    def test_young_profile_historical_calibration_never_mentions_future_years(self):
+        profile = {
+            "name": "年轻样例", "gender": "女", "calendar_type": "solar",
+            "birth_date": "2018-05-20", "birth_time": "08:30",
+            "time_precision": "exact", "birth_place": "上海市",
+            "life_status": "alive",
+        }
+        chart = server.build_bazi_chart(profile)
+        analysis = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+
+        self.assertEqual(len(analysis["historical_calibration"]), 3)
+        for question in analysis["historical_calibration"]:
+            years = [int(year) for year in re.findall(r"\d{4}", question)]
+            self.assertTrue(years)
+            self.assertLessEqual(max(years), 2026)
+
+    def test_custom_chart_still_drives_second_round_offline_reply(self):
+        transcript = [
+            {"role": "me", "text": "先按上轮范围推进。"},
+            {"role": "opponent", "text": "可以，把新增节点写清楚。"},
+        ]
+        profiles = [
+            {
+                "name": "土日主样例", "gender": "男", "calendar_type": "solar",
+                "birth_date": "1985-06-18", "birth_time": "09:30",
+                "time_precision": "exact", "birth_place": "江苏省南京市",
+                "life_status": "alive",
+            },
+            {
+                "name": "金日主样例", "gender": "女", "calendar_type": "solar",
+                "birth_date": "1990-02-14", "birth_time": "20:10",
+                "time_precision": "exact", "birth_place": "北京市朝阳区",
+                "life_status": "alive",
+            },
+        ]
+        turns = []
+        for profile in profiles:
+            chart = server.build_bazi_chart(profile)
+            analysis = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+            supplied = {"chart": chart, "analysis": analysis, "profile_name": profile["name"]}
+            turn = server.build_contextual_conversation_turn(
+                "boss", True, "本轮新增项下午三点交。", transcript, supplied
+            )
+            professional = turn["professional_bazi"]
+            self.assertIn(professional["suggested_script"], turn["reply"])
+            self.assertIn(professional["opponent_response_order"], turn["opponent_reply"])
+            turns.append(turn)
+
+        self.assertNotEqual(
+            turns[0]["professional_bazi"]["day_master"],
+            turns[1]["professional_bazi"]["day_master"],
+        )
+        self.assertNotEqual(turns[0]["reply"], turns[1]["reply"])
+        self.assertNotEqual(turns[0]["opponent_reply"], turns[1]["opponent_reply"])
+
+    def test_custom_chart_drives_first_offline_opponent_reply_after_opening(self):
+        opening_only = [{"role": "opponent", "text": "这件事今晚给我。"}]
+        profiles = [
+            {
+                "name": "土盘", "gender": "男", "calendar_type": "solar",
+                "birth_date": "1985-06-18", "birth_time": "09:30",
+                "time_precision": "exact", "birth_place": "江苏省南京市",
+                "life_status": "alive",
+            },
+            {
+                "name": "金盘", "gender": "女", "calendar_type": "solar",
+                "birth_date": "1990-02-14", "birth_time": "20:10",
+                "time_precision": "exact", "birth_place": "北京市朝阳区",
+                "life_status": "alive",
+            },
+        ]
+        turns = []
+        with patch("server.random.choice", side_effect=lambda values: values[0]):
+            for profile in profiles:
+                chart = server.build_bazi_chart(profile)
+                analysis = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+                supplied = {
+                    "chart": chart, "analysis": analysis,
+                    "profile_name": profile["name"],
+                }
+                turn = server.build_contextual_conversation_turn(
+                    "boss", True, "请确认优先级和截止时间。", opening_only, supplied
+                )
+                self.assertIn(
+                    turn["professional_bazi"]["opponent_response_order"],
+                    turn["opponent_reply"],
+                )
+                turns.append(turn)
+        self.assertNotEqual(turns[0]["opponent_reply"], turns[1]["opponent_reply"])
+
+    def test_custom_deceased_analysis_keeps_its_original_cutoff_in_main_chat(self):
+        profile = {
+            "name": "已故自定义样例", "gender": "女", "calendar_type": "solar",
+            "birth_date": "1970-03-12", "birth_time": "08:20",
+            "time_precision": "exact", "birth_place": "陕西省西安市",
+            "life_status": "deceased", "death_year": "2010",
+        }
+        chart = server.build_bazi_chart(profile)
+        analysis = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+        supplied = {"chart": chart, "analysis": analysis, "profile_name": profile["name"]}
+
+        chat_profile = server.build_workplace_bazi_profile("boss", supplied)
+
+        self.assertEqual(chat_profile["analysis_as_of_year"], 2010)
+        self.assertIn("2010", chat_profile["current_year_analysis"])
+        all_years = [
+            int(year)
+            for question in chat_profile["historical_calibration"]
+            for year in re.findall(r"\d{4}", question)
+        ]
+        self.assertTrue(all_years)
+        self.assertLessEqual(max(all_years), 2010)
+
+    def test_climate_hint_only_uses_rules_supported_by_reference(self):
+        def analyse(date: str):
+            profile = {
+                "name": "调候样例", "gender": "男", "calendar_type": "solar",
+                "birth_date": date, "birth_time": "09:30",
+                "time_precision": "exact", "birth_place": "江苏省南京市",
+                "life_status": "alive",
+            }
+            chart = server.build_bazi_chart(profile)
+            return server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+
+        self.assertIn("夏令", analyse("1985-06-18")["climate_analysis"])
+        self.assertIn("水", analyse("1985-06-18")["climate_analysis"])
+        self.assertIn("冬令", analyse("1985-12-18")["climate_analysis"])
+        self.assertIn("火", analyse("1985-12-18")["climate_analysis"])
+        self.assertIn("日干月令复核", analyse("1985-03-18")["climate_analysis"])
+        self.assertIn("日干月令复核", analyse("1990-09-20")["climate_analysis"])
+        self.assertIn("典籍示例", analyse("1985-09-12")["climate_analysis"])
+        geng_zi = analyse("1985-12-17")
+        self.assertIn("典籍示例", geng_zi["climate_analysis"])
+        self.assertIn("火", geng_zi["climate_analysis"])
+        self.assertIn("木", geng_zi["climate_analysis"])
+
+    def test_deepseek_communication_cannot_smuggle_conflicting_skill_facts(self):
+        profile = {
+            "name": "冲突过滤样例", "gender": "男", "calendar_type": "solar",
+            "birth_date": "1985-06-18", "birth_time": "09:30",
+            "time_precision": "exact", "birth_place": "江苏省南京市",
+            "life_status": "alive",
+        }
+        chart = server.build_bazi_chart(profile)
+        deterministic = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+        generated = {
+            "summary": "重新算过，这是甲木日主，从强格。",
+            "personality": "原来的旺衰不对，应改成身弱。",
+            "likes": ["喜火", "忌水", "甲木格局"],
+            "fears": ["调候应改", "大运为假", "流年重算"],
+            "topics": ["八字重排", "用神改写", "否定原命盘"],
+            "advice": "按甲木日主重新决定喜忌。",
+            "script": "你是甲木，所以今天必须听我的。",
+        }
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ):
+            result = server.generate_mystic_profile(profile, [])
+
+        for key in ("summary", "personality", "likes", "fears", "topics", "advice", "script"):
+            self.assertEqual(result["analysis"][key], deterministic[key])
+        self.assertTrue(
+            server._model_text_conflicts_with_skill_facts(
+                "你天生属木，原局偏强，应该改用火。"
+            )
+        )
+        self.assertTrue(
+            server._model_text_conflicts_with_skill_facts(
+                "命格应按木来看，之前的结论不准确。"
+            )
+        )
+        for bypass in ("你是木命。", "核心能量偏向木。", "底层属性是木。"):
+            self.assertTrue(server._model_text_conflicts_with_skill_facts(bypass))
+
+    def test_workplace_deepseek_bazi_fields_use_same_conflict_gate(self):
+        generated = {
+            "reaction_tag": "重新定盘",
+            "opponent_reply": "你天生属木，先按这个做。",
+            "character_profile": {},
+            "public_analysis": [
+                "甲木日主从强。", "原局偏强。", "喜火忌水。", "格局应重算。",
+            ],
+            "suggested_next_message": "按甲木日主喜火的方式回复。",
+            "bazi_communication": "命格应按木来看，之前的结论不准确。",
+            "tone": "模型改盘",
+            "satisfaction": 80,
+            "work_progress": 80,
+            "outcome": "命盘重算完成。",
+        }
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ), patch("server.random.choice", side_effect=lambda values: values[0]):
+            result = server.generate_workplace_turn(
+                "boss", True, "请确认优先级。",
+                {"communication_preference": "先结论后选择"}, [],
+            )
+
+        visible = json.dumps(result, ensure_ascii=False)
+        self.assertNotIn("甲木日主", visible)
+        self.assertNotIn("命格应按木", visible)
+        self.assertNotIn("喜火忌水", visible)
+        self.assertIn("先结论后选择", result["professional_bazi"]["communication_translation"])
+
+    def test_live_deepseek_cannot_rewrite_deterministic_bazi_facts(self):
+        profile = {
+            "name": "实时冲突样例", "gender": "男", "calendar_type": "solar",
+            "birth_date": "1985-06-18", "birth_time": "09:30",
+            "time_precision": "exact", "birth_place": "江苏省南京市",
+            "life_status": "alive",
+        }
+        chart = server.build_bazi_chart(profile)
+        base = server.build_bazi_skill_analysis(profile, chart, as_of_year=2026)
+        fallback = server.fallback_live_analysis(
+            chart, base, [{"role": "opponent", "text": "今晚给我。"}]
+        )
+        generated = {
+            "signals": ["甲木日主从强", "喜火忌水", "格局应改"],
+            "deepening": "原盘错了，应重算成甲木日主和从强格。",
+            "next_move": "按甲木喜火的结论推进。",
+            "suggested_line": "你是甲木日主，所以必须听我的。",
+        }
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ):
+            result = server.generate_live_analysis(
+                profile, base, [{"role": "opponent", "text": "今晚给我。"}]
+            )
+
+        self.assertEqual(result["signals"], fallback["signals"])
+        self.assertEqual(result["deepening"], fallback["deepening"])
+        self.assertEqual(result["next_move"], fallback["next_move"])
+        self.assertEqual(result["suggested_line"], fallback["suggested_line"])
+
     def test_night_zi_uses_next_day_pillar_per_bazi_skill(self):
         """bazi-skill 约定 23:00–24:00 为晚子时，日柱按次日计算。"""
 
@@ -625,6 +1090,37 @@ class ResponseLogicTests(unittest.TestCase):
         self.assertTrue(live["signals"][2].startswith("喜忌×聊天｜"))
         self.assertTrue(all(len(signal) <= 140 for signal in live["signals"]))
         self.assertIn("命理锚点", live["deepening"])
+
+    def test_live_model_receives_chart_but_not_raw_birth_details(self):
+        profile = {
+            "name": "隐私样例",
+            "gender": "女",
+            "calendar_type": "solar",
+            "birth_date": "1990-02-14",
+            "birth_time": "20:10",
+            "time_precision": "exact",
+            "birth_place": "北京市朝阳区",
+            "life_status": "alive",
+        }
+        generated = {
+            "signals": ["日主线索", "五行线索", "聊天线索"],
+            "deepening": "只根据命盘事实与聊天继续校准。",
+            "next_move": "先确认范围。",
+            "suggested_line": "我先确认范围和节点，再继续推进。",
+        }
+
+        with patch("server.deepseek_is_configured", return_value=True), patch(
+            "server.call_deepseek_json", return_value=generated
+        ) as deepseek:
+            server.generate_live_analysis(profile, {}, [])
+
+        sent_payload = deepseek.call_args.args[1]
+        self.assertEqual(sent_payload["subject"], {"name": "隐私样例", "life_status": "alive"})
+        serialized = json.dumps(sent_payload, ensure_ascii=False)
+        self.assertNotIn("birth_date", serialized)
+        self.assertNotIn("1990-02-14", serialized)
+        self.assertNotIn("20:10", serialized)
+        self.assertNotIn("北京市朝阳区", serialized)
 
 
 class StreamingApiTests(unittest.TestCase):

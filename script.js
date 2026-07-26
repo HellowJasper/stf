@@ -179,8 +179,11 @@ const mobileOpenMysticButton = document.querySelector("#mobile-open-mystic");
 const baziLockTitle = document.querySelector("#bazi-lock-title");
 const baziLockCopy = document.querySelector("#bazi-lock-copy");
 const baziProfile = document.querySelector("#bazi-profile");
+const baziProfileSource = document.querySelector("#bazi-profile-source");
+const baziProfileTakeover = document.querySelector("#bazi-profile-takeover");
 const pillarGrid = document.querySelector("#pillar-grid");
 const elementLabel = document.querySelector("#element-label");
+const compatibilityLabel = document.querySelector("#compatibility-label");
 const compatibilityScore = document.querySelector("#compatibility-score");
 const compatibilityBar = document.querySelector("#compatibility-bar");
 const triggerCopy = document.querySelector("#trigger-copy");
@@ -199,6 +202,7 @@ const mysticStepNodes = [...document.querySelectorAll("[data-mystic-step]")];
 const birthForm = document.querySelector("#birth-form");
 const birthName = document.querySelector("#birth-name");
 const birthFormerName = document.querySelector("#birth-former-name");
+const birthFormerNameYear = document.querySelector("#birth-former-name-year");
 const birthCalendar = document.querySelector("#birth-calendar");
 const birthDateLabel = document.querySelector("#birth-date-label");
 const birthDateHelp = document.querySelector("#birth-date-help");
@@ -221,6 +225,14 @@ const chartProgress = document.querySelector("#chart-progress");
 const chartStatus = document.querySelector("#chart-status");
 const analysisObjectName = document.querySelector("#analysis-object-name");
 const mysticResults = document.querySelector("#mystic-results");
+const skillRuntimeCard = document.querySelector("#skill-runtime-card");
+const skillRuntimeStatus = document.querySelector("#skill-runtime-status");
+const skillRuntimeCount = document.querySelector("#skill-runtime-count");
+const skillRuntimeName = document.querySelector("#skill-runtime-name");
+const skillRuntimeVersion = document.querySelector("#skill-runtime-version");
+const skillCalendarEngine = document.querySelector("#skill-calendar-engine");
+const skillAnalysisSource = document.querySelector("#skill-analysis-source");
+const skillRuntimeReferences = document.querySelector("#skill-runtime-references");
 const skillChartName = document.querySelector("#skill-chart-name");
 const skillSolarDate = document.querySelector("#skill-solar-date");
 const skillLunarDate = document.querySelector("#skill-lunar-date");
@@ -238,6 +250,12 @@ const skillDayMasterAnalysis = document.querySelector("#skill-day-master-analysi
 const skillFavorable = document.querySelector("#skill-favorable");
 const skillUnfavorable = document.querySelector("#skill-unfavorable");
 const skillClassicReference = document.querySelector("#skill-classic-reference");
+const skillStrengthEvidence = document.querySelector("#skill-strength-evidence");
+const skillPatternAnalysis = document.querySelector("#skill-pattern-analysis");
+const skillClimateAnalysis = document.querySelector("#skill-climate-analysis");
+const skillCurrentDayun = document.querySelector("#skill-current-dayun");
+const skillCurrentYear = document.querySelector("#skill-current-year");
+const skillHistoricalCalibration = document.querySelector("#skill-historical-calibration");
 const profileName = document.querySelector("#profile-name");
 const profileSummary = document.querySelector("#profile-summary");
 const profilePersonality = document.querySelector("#profile-personality");
@@ -563,19 +581,65 @@ function createQuickPrompts(items) {
   quickPrompts.replaceChildren(fragment);
 }
 
+function firstReadableItem(items, fallback = "待进一步校准") {
+  if (!Array.isArray(items)) return fallback;
+  const item = items.find((value) => typeof value === "string" && value.trim());
+  return item?.trim() || fallback;
+}
+
+function activeBaziDisplay() {
+  const demo = scenarios[activeScenario].bazi;
+  const result = mysticResultByScenario[activeScenario];
+  const chart = result?.chart;
+  const analysis = result?.analysis || {};
+  const chartPillars = Array.isArray(chart?.pillars) ? chart.pillars.slice(0, 4) : [];
+
+  if (chartPillars.length !== 4) {
+    return {
+      ...demo,
+      custom: false,
+      source: "对方假定四柱",
+    };
+  }
+
+  const dayMaster = chart.day_master || {};
+  const profileName = result?.profile?.name || scenarios[activeScenario].sender;
+  return {
+    custom: true,
+    source: `专业四柱 · ${profileName}`,
+    pillars: chartPillars.map((pillar, index) => [
+      pillar.label || ["年柱", "月柱", "日柱", "时柱"][index],
+      `${pillar.stem || "？"}${pillar.branch || "？"}`,
+    ]),
+    element: `${dayMaster.stem || "？"}日主 · ${dayMaster.polarity || ""}${dayMaster.element || "五行待定"} · ${analysis.strength || "旺衰待核"}`,
+    compatibility: demo.compatibility,
+    trigger: firstReadableItem(analysis.fears, demo.trigger),
+    delight: firstReadableItem(analysis.likes, demo.delight),
+    strategy: analysis.advice || analysis.script || demo.strategy,
+  };
+}
+
 function renderBaziProfile() {
-  const profile = scenarios[activeScenario].bazi;
+  const profile = activeBaziDisplay();
   const fragment = document.createDocumentFragment();
 
   profile.pillars.forEach(([label, value]) => {
     const tile = document.createElement("div");
     tile.className = "pillar-tile";
-    tile.innerHTML = `<small>${label}</small><strong>${value}</strong>`;
+    const pillarLabel = document.createElement("small");
+    const pillarValue = document.createElement("strong");
+    pillarLabel.textContent = label;
+    pillarValue.textContent = value;
+    tile.append(pillarLabel, pillarValue);
     fragment.append(tile);
   });
 
   pillarGrid.replaceChildren(fragment);
+  baziProfile.dataset.source = profile.custom ? "professional" : "demo";
+  baziProfileSource.textContent = profile.source;
+  baziProfileTakeover.hidden = !profile.custom;
   elementLabel.textContent = profile.element;
+  compatibilityLabel.textContent = profile.custom ? "沟通适配度（娱乐演示）" : "今日合拍指数（娱乐）";
   compatibilityScore.textContent = `${profile.compatibility}%`;
   triggerCopy.textContent = profile.trigger;
   delightCopy.textContent = profile.delight;
@@ -644,6 +708,7 @@ function renderScenario(key) {
   userMessage.value = scenario.defaultPrompt;
   createQuickPrompts(scenario.quickPrompts);
   renderBaziProfile();
+  resetCheatLoadingCopy();
   clearGeneratedConversation();
   renderConversationHistory(key);
   updateConversationRoundUI(key);
@@ -668,8 +733,11 @@ function renderScenario(key) {
 }
 
 function resetCheatLoadingCopy() {
-  baziLockTitle.textContent = "点击开启今日外挂";
-  baziLockCopy.textContent = "开启后，对方反馈会多一层角色校准";
+  const hasProfessionalChart = Boolean(mysticResultByScenario[activeScenario]?.chart);
+  baziLockTitle.textContent = hasProfessionalChart ? "专业排盘已接管今日外挂" : "点击开启今日外挂";
+  baziLockCopy.textContent = hasProfessionalChart
+    ? "开启后，聊天将优先使用本场景刚刚生成的命盘"
+    : "开启后，对方反馈会多一层角色校准";
 }
 
 function syncMobileBuffBar() {
@@ -708,9 +776,11 @@ function setCheatEnabled(nextEnabled, { silent = false } = {}) {
 
   if (silent) return;
   if (cheatEnabled) {
-    composerStatus.textContent = "校准完成：下一条对方反馈会叠加雷点与相处策略。";
+    composerStatus.textContent = mysticResultByScenario[activeScenario]
+      ? "专业排盘已接管外挂：下一条反馈将按本场景命盘校准。"
+      : "校准完成：下一条对方反馈会叠加雷点与相处策略。";
     window.setTimeout(() => {
-      compatibilityBar.style.width = `${scenarios[activeScenario].bazi.compatibility}%`;
+      compatibilityBar.style.width = `${activeBaziDisplay().compatibility}%`;
     }, 50);
   } else {
     composerStatus.textContent = "外挂已关闭：只做基础沟通拆招。";
@@ -1077,6 +1147,128 @@ async function readNdjsonStream(response) {
   if (buffer.trim()) handleStreamEvent(JSON.parse(buffer));
 }
 
+function safeChartForChat(chart = {}) {
+  const pillars = Array.isArray(chart.pillars) ? chart.pillars.slice(0, 4) : [];
+  const dayMaster = chart.day_master || {};
+  const yun = chart.yun || {};
+  return {
+    engine: typeof chart.engine === "string" ? chart.engine : "",
+    pillars: pillars.map((pillar) => ({
+      label: String(pillar.label || ""),
+      stem: String(pillar.stem || ""),
+      branch: String(pillar.branch || ""),
+      stem_element: String(pillar.stem_element || ""),
+      branch_element: String(pillar.branch_element || ""),
+      ten_god: String(pillar.ten_god || ""),
+      hidden_stems: Array.isArray(pillar.hidden_stems)
+        ? pillar.hidden_stems.slice(0, 4).map((item) => ({
+          stem: String(item?.stem || ""),
+          element: String(item?.element || ""),
+          ten_god: String(item?.ten_god || ""),
+        }))
+        : [],
+    })),
+    day_master: {
+      stem: String(dayMaster.stem || ""),
+      element: String(dayMaster.element || ""),
+      polarity: String(dayMaster.polarity || ""),
+    },
+    element_distribution: Object.fromEntries(
+      Object.entries(chart.element_distribution || {})
+        .filter(([element, value]) => "木火土金水".includes(element) && Number.isFinite(Number(value)))
+        .map(([element, value]) => [element, Number(value)]),
+    ),
+    yun: {
+      direction: String(yun.direction || ""),
+      start: String(yun.start || ""),
+      cycles: Array.isArray(yun.cycles)
+        ? yun.cycles.slice(0, 10).map((cycle) => ({
+          index: Number(cycle?.index) || 0,
+          ganzhi: String(cycle?.ganzhi || ""),
+          ages: String(cycle?.ages || ""),
+          years: String(cycle?.years || ""),
+        }))
+        : [],
+    },
+  };
+}
+
+function safeAnalysisForChat(analysis = {}) {
+  const textFields = [
+    "day_master_analysis",
+    "strength",
+    "pattern",
+    "pattern_analysis",
+    "climate_analysis",
+    "classic_reference",
+    "current_dayun_analysis",
+    "current_year_analysis",
+    "summary",
+    "personality",
+    "advice",
+    "script",
+  ];
+  const listFields = [
+    "favorable_elements",
+    "unfavorable_elements",
+    "likes",
+    "fears",
+    "topics",
+    "historical_calibration",
+  ];
+  const safe = {};
+  textFields.forEach((key) => {
+    if (typeof analysis[key] === "string") safe[key] = analysis[key].slice(0, 800);
+  });
+  listFields.forEach((key) => {
+    if (!Array.isArray(analysis[key])) return;
+    safe[key] = analysis[key]
+      .filter((item) => typeof item === "string")
+      .slice(0, 6)
+      .map((item) => item.slice(0, 360));
+  });
+  ["as_of_year", "analysis_as_of_year"].forEach((key) => {
+    const year = Number.parseInt(analysis[key], 10);
+    if (Number.isInteger(year) && year >= 1800 && year <= new Date().getFullYear()) {
+      safe[key] = year;
+    }
+  });
+  if (typeof analysis.strength_evidence === "string") {
+    safe.strength_evidence = analysis.strength_evidence.slice(0, 1200);
+  } else if (Array.isArray(analysis.strength_evidence)) {
+    safe.strength_evidence = analysis.strength_evidence.slice(0, 6).map((item) => {
+      if (typeof item === "string") return item.slice(0, 360);
+      if (!item || typeof item !== "object") return "";
+      return Object.fromEntries(
+        Object.entries(item)
+          .filter(([key, value]) => ["factor", "dimension", "label", "evidence", "detail", "judgement", "conclusion", "text"].includes(key) && typeof value === "string")
+          .map(([key, value]) => [key, value.slice(0, 360)]),
+      );
+    }).filter((item) => typeof item === "string" ? item : Object.keys(item).length);
+  }
+  return safe;
+}
+
+function activeChatBaziProfile() {
+  const customResult = mysticResultByScenario[activeScenario];
+  if (customResult?.chart && customResult?.analysis) {
+    return {
+      chart: safeChartForChat(customResult.chart),
+      analysis: safeAnalysisForChat(customResult.analysis),
+      profile_name: String(customResult.profile?.name || scenarios[activeScenario].sender).slice(0, 80),
+    };
+  }
+
+  const demo = scenarios[activeScenario].bazi;
+  return {
+    pillars: demo.pillars.map(([label, value]) => `${label}${value}`),
+    element: demo.element,
+    communication_preference: demo.strategy,
+    trigger: demo.trigger,
+    delight: demo.delight,
+  };
+}
+
 async function submitMessage(event) {
   event.preventDefault();
   if (isProcessing) return;
@@ -1107,13 +1299,7 @@ async function submitMessage(event) {
         bazi_enabled: cheatEnabled,
         message: text,
         recent_messages: collectTranscript(),
-        bazi_profile: cheatEnabled ? {
-          pillars: scenarios[activeScenario].bazi.pillars.map(([label, value]) => `${label}${value}`),
-          element: scenarios[activeScenario].bazi.element,
-          communication_preference: scenarios[activeScenario].bazi.strategy,
-          trigger: scenarios[activeScenario].bazi.trigger,
-          delight: scenarios[activeScenario].bazi.delight,
-        } : {},
+        bazi_profile: cheatEnabled ? activeChatBaziProfile() : {},
       }),
       signal: requestController.signal,
     });
@@ -1309,6 +1495,7 @@ function fillCurrentOpponent() {
   const profile = scenarios[activeScenario].birth;
   birthName.value = profile.name;
   birthFormerName.value = "";
+  birthFormerNameYear.value = "";
   birthCalendar.value = "solar";
   birthGender.value = profile.gender;
   birthDate.value = profile.date;
@@ -1516,6 +1703,7 @@ function profileFromForm() {
   return {
     name: birthName.value.trim(),
     former_name: birthFormerName.value.trim(),
+    former_name_year: birthFormerNameYear.value.trim(),
     calendar_type: birthCalendar.value,
     gender: birthGender.value,
     birth_date: birthDate.value,
@@ -1528,14 +1716,94 @@ function profileFromForm() {
   };
 }
 
-function renderList(target, items) {
+function renderList(target, items = [], transform = (item) => item) {
   const fragment = document.createDocumentFragment();
-  items.forEach((item) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  safeItems.forEach((item, index) => {
     const li = document.createElement("li");
-    li.textContent = item;
+    li.textContent = transform(item, index);
     fragment.append(li);
   });
   target.replaceChildren(fragment);
+}
+
+function readableSkillEvidence(item) {
+  if (typeof item === "string") return item;
+  if (!item || typeof item !== "object") return "证据项待复核";
+  const label = item.factor || item.dimension || item.label || item.aspect || item.title;
+  const evidence = item.evidence || item.detail || item.reason || item.text || item.value;
+  const judgement = item.judgement || item.conclusion || item.result;
+  const parts = [label, evidence, judgement]
+    .filter((value, index, values) => typeof value === "string" && value.trim() && values.indexOf(value) === index)
+    .map((value) => value.trim());
+  return parts.length ? parts.join("｜") : "结构化证据项待复核";
+}
+
+function readableReference(reference) {
+  if (typeof reference === "string") return reference;
+  if (!reference || typeof reference !== "object") return "未知参考文件";
+  return reference.name || reference.file || reference.path || "已加载参考文件";
+}
+
+function renderSkillProvenance(result) {
+  const provenance = result.provenance || {};
+  const references = Array.isArray(provenance.references_loaded)
+    ? provenance.references_loaded.slice(0, 8)
+    : [];
+  const runtimeLoaded = provenance.skill_runtime_loaded === true;
+  const expectedReferenceCount = 4;
+  const fullyLoaded = runtimeLoaded && references.length >= expectedReferenceCount;
+
+  skillRuntimeCard.dataset.state = fullyLoaded ? "loaded" : "compat";
+  skillRuntimeStatus.textContent = fullyLoaded
+    ? "Skill 运行时已加载"
+    : "兼容响应 · 运行证明缺失";
+  skillRuntimeCount.textContent = `${Math.min(references.length, expectedReferenceCount)}/${expectedReferenceCount}`;
+  skillRuntimeName.textContent = provenance.skill || "jinchenma94/bazi-skill（未返回证明）";
+  const revision = provenance.skill_version || provenance.source_revision || "";
+  const contractHash = provenance.contract_hash || "";
+  skillRuntimeVersion.textContent = revision
+    ? `${revision.slice(0, 12)}${contractHash ? ` · SHA ${contractHash.slice(0, 10)}` : ""}`
+    : "旧响应未提供";
+  skillCalendarEngine.textContent = provenance.calendar_engine || result.chart?.engine || "历法引擎未标注";
+  const analysisSource = provenance.analysis_source || result.source || "unknown";
+  skillAnalysisSource.textContent = analysisSource === "deepseek-v4"
+    ? "Skill 结构 · DeepSeek 语言转译"
+    : analysisSource === "demo-fallback" || analysisSource === "skill-runtime"
+      ? "Skill 本地规则解读"
+      : analysisSource;
+
+  if (references.length) {
+    renderList(skillRuntimeReferences, references, readableReference);
+  } else {
+    renderList(skillRuntimeReferences, ["旧版接口未返回 references_loaded；请重新排盘获取可验证来源"]);
+  }
+}
+
+function renderSkillDepth(result) {
+  const analysis = result.analysis || {};
+  const chart = result.chart || {};
+  const evidence = Array.isArray(analysis.strength_evidence) && analysis.strength_evidence.length
+    ? analysis.strength_evidence
+    : typeof analysis.strength_evidence === "string" && analysis.strength_evidence.trim()
+      ? analysis.strength_evidence.split(/[；;]\s*/).filter(Boolean)
+      : [analysis.day_master_analysis || analysis.strength || "旧版响应未返回旺衰证据链。"];
+  renderList(skillStrengthEvidence, evidence, readableSkillEvidence);
+
+  skillPatternAnalysis.textContent = analysis.pattern_analysis
+    || analysis.pattern
+    || "旧版响应未返回月令、透干与格局的分层依据。";
+  skillClimateAnalysis.textContent = analysis.climate_analysis
+    || "旧版响应未返回按日干与月令核对的调候依据。";
+  skillCurrentDayun.textContent = analysis.current_dayun_analysis
+    || (chart.yun ? `大运${chart.yun.direction || "方向待定"}，${chart.yun.start || "起运时间待定"}；旧版响应未提供当前大运的作用分析。` : "旧版响应未返回当前大运分析。")
+    || "旧版响应未返回当前大运分析。";
+  skillCurrentYear.textContent = analysis.current_year_analysis
+    || "旧版响应未返回流年与原局、大运的三层关系。";
+  const calibration = Array.isArray(analysis.historical_calibration) && analysis.historical_calibration.length
+    ? analysis.historical_calibration
+    : ["旧版响应未返回历史校准问题；重新排盘后可用已发生事件核验推演。"];
+  renderList(skillHistoricalCalibration, calibration, readableSkillEvidence);
 }
 
 function renderChart(chart) {
@@ -1692,16 +1960,18 @@ function renderProfessionalChart(result) {
 }
 
 function renderMysticResult(result) {
-  const analysis = result.analysis;
+  const analysis = result.analysis || {};
+  renderSkillProvenance(result);
   renderProfessionalChart(result);
+  renderSkillDepth(result);
   profileName.textContent = result.profile.name;
-  profileSummary.textContent = analysis.summary;
-  profilePersonality.textContent = analysis.personality;
+  profileSummary.textContent = analysis.summary || "命盘结构已生成，沟通转译仍待补全。";
+  profilePersonality.textContent = analysis.personality || analysis.day_master_analysis || "当前响应未提供性格转译。";
   renderList(profileLikes, analysis.likes);
   renderList(profileFears, analysis.fears);
   renderList(profileTopics, analysis.topics);
-  profileAdvice.textContent = analysis.advice;
-  profileScript.textContent = analysis.script;
+  profileAdvice.textContent = analysis.advice || "先核对事实、边界和交付节点，再决定措辞。";
+  profileScript.textContent = analysis.script || "我先把目标、边界和时间点对齐，再给您一版可以直接确认的方案。";
   mysticResults.hidden = false;
   setModelStatus(result.source === "deepseek-v4" || Boolean(result.warning), result.source);
 }
@@ -1756,6 +2026,8 @@ async function generateMysticProfile(event) {
     window.setTimeout(() => oracleStage.classList.remove("is-settling"), 360);
     mysticResultByScenario[activeScenario] = result;
     renderMysticResult(result);
+    renderBaziProfile();
+    resetCheatLoadingCopy();
     renderLiveTranscript();
     setMysticStep("analysis");
     chartStatus.textContent = result.source === "deepseek-v4"

@@ -1,0 +1,22 @@
+{
+  "name": "jinchenma94/bazi-skill",
+  "source_url": "https://github.com/jinchenma94/bazi-skill",
+  "source_revision": "bdd7f863d4450bf0e2fac84579ad6b45cfdfa25c",
+  "license": "MIT",
+  "vendored_at": "2026-07-26",
+  "runtime_contract": "SKILL.md",
+  "required_references": [
+    "wuxing-tables.md",
+    "shichen-table.md",
+    "dayun-rules.md",
+    "classical-texts.md"
+  ],
+  "sha256": {
+    "SKILL.md": "ee9f48acda7cd237b4d04789ea2815cf37a14849cd300b4ad529739928017386",
+    "references/wuxing-tables.md": "167982bb7fd5ddc0f3dcfafe6ec377c92fa2d4bd90153b72c89d65888a7d419f",
+    "references/shichen-table.md": "bcddb4c87d179d52ea15740c75edcfa2f99f89aef23bc5068fc88c87b4068768",
+    "references/dayun-rules.md": "70e35df806e7d6ede9e3ab6524bd2088d3ce9ac8a8e8d6177c84abe0e2b03562",
+    "references/classical-texts.md": "43094d2069567a37757fd6c6d8927c3936d446ba2f28378dd1a1387a9768026b"
+  },
+  "integration_note": "lunar_python 负责确定性历法排盘；本 Skill 规则负责结构化命理解读；语言模型只能转译沟通表达。"
+}

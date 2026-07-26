@@ -13,7 +13,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ffe600'/%3E%3Cpath d='M13 14h38v36H13z' fill='%23131313'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='28' font-family='sans-serif' font-weight='900' fill='%23ffe600'%3E爽%3C/text%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260726-4" />
+    <link rel="stylesheet" href="./styles.css?v=20260726-5" />
   </head>
   <body class="is-booting">
     <section class="boot-screen" id="boot-screen" data-stage="1" aria-label="工位开挂局正在启动" aria-live="polite" aria-atomic="true">
@@ -468,14 +468,17 @@
 
         <div class="bazi-profile" id="bazi-profile" aria-hidden="true">
           <div class="bazi-profile__label">
-            <span>对方假定四柱</span>
+            <span id="bazi-profile-source">对方假定四柱</span>
             <small id="element-label">火旺 · 行动力强</small>
           </div>
+          <strong class="bazi-profile__takeover" id="bazi-profile-takeover" hidden>
+            专业排盘已接管外挂
+          </strong>
           <div class="pillar-grid" id="pillar-grid"></div>
 
           <div class="compatibility">
             <div>
-              <span>今日合拍指数</span>
+              <span id="compatibility-label">今日合拍指数（娱乐）</span>
               <strong id="compatibility-score">58%</strong>
             </div>
             <div class="compatibility__track"><span id="compatibility-bar"></span></div>
@@ -658,6 +661,16 @@
               <input id="birth-former-name" name="former_name" autocomplete="off" placeholder="没有可留空" />
             </label>
             <label>
+              <span>改名年份</span>
+              <input
+                id="birth-former-name-year"
+                name="former_name_year"
+                inputmode="numeric"
+                maxlength="4"
+                placeholder="不记得可留空"
+              />
+            </label>
+            <label>
               <span>生日历法 *</span>
               <select id="birth-calendar" name="calendar_type" required>
                 <option value="solar">阳历 / 公历</option>
@@ -770,6 +783,40 @@
       </div>
 
       <section class="mystic-results" id="mystic-results" hidden>
+        <section class="skill-runtime-card" id="skill-runtime-card" data-state="waiting" aria-labelledby="skill-runtime-title">
+          <div class="skill-runtime-card__seal" aria-hidden="true">
+            <span>技</span>
+            <i></i>
+          </div>
+          <div class="skill-runtime-card__copy">
+            <small>BAZI SKILL · 可验证运行来源</small>
+            <h3 id="skill-runtime-title">
+              <span id="skill-runtime-status">等待 Skill 运行证明</span>
+              <b id="skill-runtime-count">0/4</b>
+            </h3>
+            <p>四柱由历法引擎确定，命理结构由 Skill 规则生成；语言模型只负责把结论翻译成职场沟通表达。</p>
+          </div>
+          <dl class="skill-runtime-card__meta">
+            <div>
+              <dt>规则包</dt>
+              <dd id="skill-runtime-name">—</dd>
+            </div>
+            <div>
+              <dt>版本 / 文件指纹</dt>
+              <dd id="skill-runtime-version">—</dd>
+            </div>
+            <div>
+              <dt>历法引擎</dt>
+              <dd id="skill-calendar-engine">—</dd>
+            </div>
+            <div>
+              <dt>解读来源</dt>
+              <dd id="skill-analysis-source">—</dd>
+            </div>
+          </dl>
+          <ul class="skill-runtime-card__refs" id="skill-runtime-references" aria-label="已加载的 bazi-skill 参考文件"></ul>
+        </section>
+
         <section class="professional-chart" aria-labelledby="professional-chart-title">
           <header>
             <div>
@@ -835,6 +882,48 @@
             <span>典籍依据</span>
             <p id="skill-classic-reference"></p>
           </article>
+        </section>
+
+        <section class="skill-depth-analysis" aria-labelledby="skill-depth-title">
+          <header>
+            <div>
+              <span>SKILL 推演链 · 不只看五行百分比</span>
+              <h3 id="skill-depth-title">从旺衰证据，到当下时运</h3>
+            </div>
+            <p>按月令、根气、透干、格局、大运与流年逐层落证；旧版接口缺少的层级会明确标为兼容信息。</p>
+          </header>
+          <div class="skill-depth-grid">
+            <article class="skill-depth-card skill-depth-card--evidence">
+              <span><i>01</i>旺衰证据</span>
+              <h4>为什么判断身旺或身弱</h4>
+              <ol id="skill-strength-evidence"></ol>
+            </article>
+            <article class="skill-depth-card">
+              <span><i>02</i>格局依据</span>
+              <h4>月令与透干如何成局</h4>
+              <p id="skill-pattern-analysis"></p>
+            </article>
+            <article class="skill-depth-card skill-depth-card--climate">
+              <span><i>03</i>调候复核</span>
+              <h4>寒、暖、燥、湿是否有据</h4>
+              <p id="skill-climate-analysis"></p>
+            </article>
+            <article class="skill-depth-card skill-depth-card--time">
+              <span><i>04</i>当前大运</span>
+              <h4>十年环境正在推什么</h4>
+              <p id="skill-current-dayun"></p>
+            </article>
+            <article class="skill-depth-card skill-depth-card--year">
+              <span><i>05</i>今年流年</span>
+              <h4>原局 × 大运 × 流年</h4>
+              <p id="skill-current-year"></p>
+            </article>
+            <article class="skill-depth-card skill-depth-card--calibration">
+              <span><i>06</i>历史校准</span>
+              <h4>用已经发生的事，反查推演是否站得住</h4>
+              <ul id="skill-historical-calibration"></ul>
+            </article>
+          </div>
         </section>
 
         <header class="mystic-results__header">
@@ -928,6 +1017,6 @@
       <p class="noscript-message">请启用 JavaScript 以体验职场对话拆招 Demo。</p>
     </noscript>
 
-    <script src="./script.js?v=20260726-4" defer></script>
+    <script src="./script.js?v=20260726-5" defer></script>
   </body>
 </html>
