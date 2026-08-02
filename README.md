@@ -1,10 +1,11 @@
-[English](README.md) | [简体中文](README.zh-CN.md)
+# STF — Workplace Power-Up
 
-# 🧧 Workplace Power-Up (STF)
+> **Chinese name:** 工位开挂局  
+> An open-source AI assistant and public reference implementation for Chinese-language workplace communication: turn emotionally charged drafts into messages with clear boundaries and actionable next steps.
 
-> An AI assistant and public reference implementation for Chinese-language workplace communication: turn emotionally charged drafts into messages with clear boundaries and actionable next steps.
+[English](README.md) | [简体中文](README.zh-CN.md) | [MIT License](LICENSE)
 
-**STF (Workplace Power-Up)** is a public reference application for safer Chinese workplace communication. It combines stateful streamed role-play, evidence-based message analysis, deterministic calendar computation, privacy-aware data separation, offline fallback, and automated API and browser tests.
+**STF** is a public reference application for safer Chinese workplace communication. It combines stateful streamed role-play, evidence-based message analysis, deterministic calendar computation, privacy-aware data separation, offline fallback, and automated API and browser tests.
 
 [⚡ Try the Live Demo](http://38.55.131.250/stf/) · [🎤 View the 5-Minute Roadshow](http://38.55.131.250/stf/roadshow.html)
 
