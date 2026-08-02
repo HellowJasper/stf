@@ -1,77 +1,81 @@
-# 🧧 工位开挂局（STF）
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-> 面向中文职场沟通的 AI 助手与公开参考实现：把情绪化草稿转化为边界清晰、能够推动事情前进的消息。
+# 🧧 Workplace Power-Up (STF)
 
-**STF (Workplace Power-Up)** is a public reference application for safer Chinese workplace communication. It combines stateful streamed role-play, evidence-based message analysis, deterministic calendar computation, privacy-aware data separation, offline fallback, and automated API/browser tests.
+> An AI assistant and public reference implementation for Chinese-language workplace communication: turn emotionally charged drafts into messages with clear boundaries and actionable next steps.
 
-[⚡ 体验产品 Demo](http://38.55.131.250/stf/) · [🎤 查看 5 分钟路演](http://38.55.131.250/stf/roadshow.html)
+**STF (Workplace Power-Up)** is a public reference application for safer Chinese workplace communication. It combines stateful streamed role-play, evidence-based message analysis, deterministic calendar computation, privacy-aware data separation, offline fallback, and automated API and browser tests.
 
-## 项目解决什么问题
+[⚡ Try the Live Demo](http://38.55.131.250/stf/) · [🎤 View the 5-Minute Roadshow](http://38.55.131.250/stf/roadshow.html)
 
-真实的职场沟通往往不是“不会写一句话”，而是需要同时处理情绪、事实、关系和行动边界。STF 在用户脑内想法与最终发出的消息之间增加一个可检查的 AI 协作层：
+## What problem does this project solve?
 
-- **把情绪翻译成行动。** 保留真实诉求，但将攻击性或模糊表达改写成能够确认事实、划清边界和推动下一步的消息。
-- **让多轮对话保持上下文。** 对手回复、公开分析和下一句建议围绕同一段真实对话持续更新，不会每轮重新开始。
-- **只分析可观察证据。** 系统解释语气、目标和风险，不展示隐藏思维链，也不把模型推测包装成事实。
-- **把确定性计算与模型生成分开。** 历法和四柱结构由代码计算，语言模型只负责表达与沟通建议，不能覆盖计算结果。
-- **保留隐私与降级边界。** 模型密钥仅保存在服务端；模型不可用时由本地演示引擎接管，核心交互仍可验证。
-- **提供可复现测试。** 项目包含 API、连续对话、移动端、视觉和路演页面的自动化验收脚本。
+Real workplace communication is rarely just about “not knowing how to phrase one sentence.” It often requires you to manage emotions, facts, relationships, and action boundaries at the same time. STF adds an inspectable AI collaboration layer between what is in your head and the message you ultimately send:
 
-## 项目定位与边界
+- **Turn emotion into action.** Preserve the user's real intent while rewriting aggressive or ambiguous language into a message that confirms facts, establishes boundaries, and moves the work forward.
+- **Maintain context across multiple turns.** The counterpart's replies, evidence-based analysis, and suggested next message keep evolving around the same real conversation instead of restarting every turn.
+- **Analyze only observable evidence.** The system explains tone, goals, and risks without exposing hidden chain-of-thought or presenting model speculation as fact.
+- **Separate deterministic computation from model generation.** Calendar and Four Pillars calculations are performed in code. The language model handles wording and communication guidance, but it cannot override computed results.
+- **Preserve privacy and graceful-degradation boundaries.** Model keys stay on the server. If the model is unavailable, a local demo engine takes over so that the core interaction remains testable.
+- **Provide reproducible tests.** The project includes automated acceptance scripts for the API, continuous conversations, mobile layouts, visual behavior, and the roadshow page.
 
-八字模块是可选的传统文化娱乐层，用于增加角色设定与交互表现，不用于判断真实人格，也不能用于招聘、绩效、医疗、法律或其他重大决策。项目真正关注的是：如何构建一个有上下文、可解释、可降级并且能够被自动化验证的中文 AI 沟通应用。
+## Project scope and boundaries
 
-## 今天抽到什么职场副本？
+The optional Bazi module—also known as the Chinese Four Pillars of Destiny (八字 / 四柱), a traditional system that interprets birth-time calendar structures—is included as a cultural-entertainment layer for richer role-play and presentation. It must not be used to infer a real person's personality or to make hiring, performance, medical, legal, or other consequential decisions.
 
-| 副本 / 道具 | 你来干什么 | 爽点在哪里 |
+The project's actual focus is how to build a Chinese-language AI communication application that is context-aware, explainable, resilient when external models fail, and verifiable through automation.
+
+## Which workplace scenario did you draw today?
+
+| Scenario / power-up | What you do | Why it helps |
 | --- | --- | --- |
-| 🎭 三大战场 | 挑选上司高压局、友善同事局或阴阳同事局 | 同一句话，面对不同人不再只会复制粘贴 |
-| 🧠 连续 AI 对话 | 把你真正想说的话发进去，多聊几轮 | 对面会承接上下文，不会每轮都像第一次见你 |
-| 🔍 公开分析摘要 | 看清对方在压什么、躲什么、想拿什么结果 | 不偷看“思维链”，只拆可验证的语气、目标和风险 |
-| 🧧 八字外挂 | 手动加载虚构命盘增益 | 提前看雷点、开心开关和更容易被接住的表达方式 |
-| 🌀 玄学分析图 | 输入生辰资料，看罗盘流转、命盘落定 | 真排盘负责定结构，AI 负责把术语翻译成人话 |
-| 📈 实时加深 | 把刚发生的聊天继续喂给分析 | 命盘只是开局假设，真实聊天证据才有最终解释权 |
-| 🔁 回溯 | 回到上一轮发送前，重新组织语言 | 现实没有撤回药，Demo 里先少交一点“后悔税” |
-| 🔋 今日耐心余额 | 看今天还剩多少情绪电量 | 高压掉血、清晰边界减伤、友善协作回血 |
+| 🎭 Three battlegrounds | Choose a high-pressure manager, a friendly coworker, or a passive-aggressive coworker | The same sentence no longer has to be copied and pasted to three very different people |
+| 🧠 Continuous AI conversation | Send what you genuinely want to say and continue for several rounds | The other side carries context forward instead of meeting you “for the first time” every turn |
+| 🔍 Evidence-based analysis | See what the other person is pressuring, avoiding, and trying to achieve | No hidden chain-of-thought—only observable tone, goals, and risks |
+| 🧧 Bazi power-up | Manually load a fictional Four Pillars profile | Preview likely friction points, positive triggers, and phrasing that may be easier for the character to accept |
+| 🌀 Mystic analysis chart | Enter birth details and watch the compass animate while the chart is calculated | Real calendar computation determines the structure; AI translates specialist terms into plain language |
+| 📈 Live refinement | Feed new messages into the current analysis | The chart is only an opening hypothesis; evidence from the real conversation always has the final say |
+| 🔁 Rewind | Return to the state before your previous message and rewrite it | Reality has no undo potion, but the demo can reduce a little “regret tax” |
+| 🔋 Today's patience balance | Check how much emotional energy you have left today | Pressure drains it, clear boundaries reduce damage, and constructive collaboration restores it |
 
-## 开一局，只要六步
+## Start a session in six steps
 
-1. **选副本：**今天来的是临时加活的上司、热心同事，还是阴阳怪气选手？
-2. **先出招：**在聊天框输入一句你真的准备发出去的话。
-3. **时间静止：**系统随机思考 1–3 秒；对方正在输入，你的血压也正在读条。
-4. **开始拆招：**对方回复逐段出现，下面同步给出公开分析和下一句建议。
-5. **选择开挂：**手动开启八字外挂，或者进入玄学分析图完成一次黑金罗盘排盘。
-6. **允许后悔：**继续多轮对话；说歪了就发动回溯，把上一句拿回来重写。
+1. **Choose a scenario:** Is today's encounter a manager assigning urgent extra work, a helpful coworker, or someone being passive-aggressive?
+2. **Make the first move:** Enter a sentence you are genuinely considering sending.
+3. **Freeze time:** The system waits for a random 1–3 seconds. The other person is “typing,” and your blood pressure is loading too.
+4. **Read the counterplay:** The reply streams in piece by piece, accompanied by evidence-based analysis and a suggested next message.
+5. **Use a power-up:** Manually enable the Bazi power-up, or enter the mystic analysis chart to run the black-and-gold compass calculation.
+6. **Allow yourself a redo:** Continue the multi-turn conversation. If the message goes sideways, use Rewind to take back the previous line and rewrite it.
 
-## 手机不是缩小版，是重新排位
+## Mobile is not a shrunken desktop—it is reprioritized
 
-主界面是黄、黑、红的职场综艺漫画感；一脚踏进玄学空间后，画风切到黑金罗盘、星空和命盘动效。移动端采用重新排版，而不是把桌面页面硬塞进手机：
+The main interface uses a yellow, black, and red workplace-variety-show comic style. Enter the mystic space and the visual language shifts to a black-and-gold compass, a star field, and animated chart elements. Mobile uses a redesigned layout instead of squeezing the desktop page into a smaller screen:
 
-- 手机竖屏：战场卡片横向滑动，聊天优先展示，消息在固定高度区域内上下滚动。
-- 手机横屏：压缩聊天可视高度，保留输入、发送和外挂入口的完整操作空间。
-- 平板：表单与结果根据宽度在单列、双列之间切换。
-- 玄学排盘：四柱表格只在自身区域横向滑动，并自动定位、突出显示日主。
-- 刘海屏：通过 Safe Area（安全区域，即避开刘海和底部手势条的可用范围）保护主要内容。
-- 可访问性：关键触控区域不小于 44px，移动端输入字体不小于 16px，并支持 `prefers-reduced-motion`（减少动态效果的系统偏好）。
+- Portrait phones: scenario cards scroll horizontally, chat takes priority, and messages scroll vertically within a fixed-height area.
+- Landscape phones: the visible chat height is compressed while preserving full access to input, send, and power-up controls.
+- Tablets: forms and results switch between one- and two-column layouts based on available width.
+- Mystic chart: the Four Pillars table scrolls horizontally only within its own region, automatically locating and highlighting the Day Master.
+- Notched displays: Safe Area insets protect key content from the notch and bottom gesture bar.
+- Accessibility: critical touch targets are at least 44 px, mobile input text is at least 16 px, and the interface respects `prefers-reduced-motion`, the operating-system preference for reduced animation.
 
-目前自动化验收覆盖 390×844、430×932、844×390、1024×768 和 1440×900。手机能开挂，平板能排盘，电脑当然也不能掉链子。
+Automated acceptance coverage currently includes 390×844, 430×932, 844×390, 1024×768, and 1440×900. The power-up works on phones, the chart works on tablets, and desktop cannot be the weak link.
 
-## 技术可以玄学，计算不能随缘
+## The interface may be mystical; computation must not be guesswork
 
 ```mermaid
 flowchart LR
-    Browser[浏览器界面\nHTML + CSS + JavaScript]
-    API[Python 服务\n静态资源 + API]
-    Rules[本地场景规则\n上下文与降级回复]
-    Bazi[lunar_python\n双历与四柱计算]
-    Skill[bazi-skill 运行时\nSKILL.md + 4 份规则]
-    Model[DeepSeek API\n语言生成]
+    Browser[Browser UI\nHTML + CSS + JavaScript]
+    API[Python service\nStatic assets + API]
+    Rules[Local scenario rules\nContext + fallback replies]
+    Bazi[lunar_python\nDual-calendar + Four Pillars computation]
+    Skill[bazi-skill runtime\nSKILL.md + 4 rule files]
+    Model[DeepSeek API\nLanguage generation]
 
-    Browser -->|NDJSON 流式请求| API
+    Browser -->|NDJSON streaming request| API
     API --> Rules
     API --> Bazi
     API --> Skill
-    API -->|服务端密钥调用| Model
+    API -->|Server-side key| Model
     Rules --> API
     Bazi --> API
     Skill --> API
@@ -79,26 +83,26 @@ flowchart LR
     API --> Browser
 ```
 
-这里有一条底线：**能算出来的交给代码，适合发挥的才交给模型。**
+There is one non-negotiable rule: **if code can calculate it, code owns it; only genuinely generative work goes to the model.**
 
-- `lunar_python` 负责公历/农历转换、节气四柱、十神、藏干、五行表层分布和大运，模型不能改写这些计算结果。
-- 出生地不再只是一个展示字段：服务会优先识别内置城市的经度与 IANA 时区（时区数据库名称，例如 `Asia/Shanghai`），也支持手填经度。它以民用时间叠加经度差与均时差（地球公转造成的太阳时微小修正）得到真太阳时，再用同一历法引擎重排四柱。
-- 结果页会同时保留民用时间盘与真太阳时盘。若校正跨越节气、日界或时辰边界，日柱/时柱会明确标红为“边界变化”；否则标为“四柱稳定”。未知时辰不伪造精确校正，只展示六字结构并提示复核。
-- `jinchenma94/bazi-skill` 不是可 `import` 的 Python SDK（软件开发工具包），而是一套 Markdown 规则契约。本项目把指定提交的 `SKILL.md` 与 4 份参考文件固化到 `vendor/bazi-skill/`，启动时逐份读取并校验 SHA-256（256 位文件指纹）；任一文件缺失或被改动，服务会直接拒绝启动，不能再拿一行静态文案假装“已接入”。
-- 程序按 Skill 的分析顺序落实月令、得令/得地/得势、格局、喜忌、调候、大运、流年和历史校准；前端结果页会展示实际加载的版本、4/4 文件清单与分析来源。
-- DeepSeek 负责对手话语、公开分析和沟通表达；模型临时摸鱼时，系统会让能承接历史上下文的本地演示引擎顶班。
-- 主聊天采用两阶段单一事实源：第一阶段确定浏览器真正收到的对手原话，第二阶段只分析这句原话，不在分析阶段偷偷改写。
-- DeepSeek 的 SSE（Server-Sent Events，服务端事件流）在服务端接收；浏览器端收到的是 NDJSON（Newline Delimited JSON，按行分隔的 JSON），因此文字可以边生成边显示。
+- `lunar_python` handles Gregorian/lunar calendar conversion, solar-term-based Four Pillars, Ten Gods, Hidden Stems, surface-level Five Elements distribution, and Luck Pillars. The model cannot rewrite these computed results.
+- Birthplace is not merely a display field. The service first tries to resolve an included city's longitude and IANA time zone (a standard database identifier such as `Asia/Shanghai`), and it also accepts a manually entered longitude. It adjusts civil time using the longitude difference and the equation of time—the small solar-time correction caused by Earth's orbit—then recomputes the Four Pillars with the same calendar engine.
+- The result page preserves both the civil-time chart and the true-solar-time chart. If the correction crosses a solar term, calendar-day boundary, or traditional two-hour boundary, the affected Day Pillar or Hour Pillar is explicitly marked as a “boundary change”; otherwise, the chart is marked “Four Pillars stable.” When the birth hour is unknown, the system does not fabricate a precise correction. It displays only the six available characters—the Year, Month, and Day Pillars—and asks the user to verify the missing hour.
+- `jinchenma94/bazi-skill` is not an importable Python SDK (software development kit). It is a Markdown-based rules contract. This project pins a specific commit of `SKILL.md` and four reference files under `vendor/bazi-skill/`. At startup, it loads every file and validates its SHA-256 hash, a 256-bit file fingerprint. If any file is missing or modified, the service refuses to start instead of pretending that a static sentence represents a working integration.
+- The implementation follows the Skill's sequence: assess the Month Command (月令, the chart's seasonal anchor); evaluate whether the Day Master is supported by season, roots, and surrounding stems and branches; then determine pattern classification, favorable and unfavorable elements, climate balancing, Luck Pillars, annual cycles, and historical calibration. The frontend displays the exact loaded version, the 4/4 file checklist, and the sources used in the analysis.
+- DeepSeek generates counterpart dialogue, evidence-based analysis, and communication wording. If the model is temporarily unavailable, a local demo engine that still understands the conversation history takes over.
+- Main chat uses a two-stage single source of truth: stage one fixes the exact counterpart message received by the browser; stage two analyzes only that message and cannot secretly rewrite it.
+- DeepSeek's SSE (Server-Sent Events, a server-to-client event stream) is consumed on the server. The browser receives NDJSON (Newline Delimited JSON, one JSON object per line), allowing text to appear as it is generated.
 
-## 三分钟开局，不用先看黄历
+## Three-minute setup—no almanac required
 
-### 环境要求
+### Requirements
 
-- Python 3.10 或更高版本
-- macOS、Linux，或其他能够运行 Python 的系统
-- 可选：Node.js 20 或更高版本，用于浏览器自动化测试
+- Python 3.10 or later
+- macOS, Linux, or another operating system capable of running Python
+- Optional: Node.js 20 or later for browser automation tests
 
-### 开跑
+### Run
 
 ```bash
 git clone https://github.com/HellowJasper/stf.git
@@ -110,91 +114,91 @@ python3 -m pip install -r requirements.txt
 python3 server.py
 ```
 
-打开以下地址：
+Open:
 
-- 产品 Demo：<http://127.0.0.1:4173/>
-- 5 分钟路演：<http://127.0.0.1:4173/roadshow.html>
+- Product demo: <http://127.0.0.1:4173/>
+- 5-minute roadshow: <http://127.0.0.1:4173/roadshow.html>
 
-不要偷懒改用 `python3 -m http.server`：它只会端上一盘静态文件，排盘、随机等待、连续对话和流式输出都会集体旷工。
+Do not take the shortcut of using `python3 -m http.server`. It only serves static files, which means chart calculation, randomized delay, continuous conversation, and streaming output will all be absent.
 
-## 请 AI 上桌（可选）
+## Bring AI to the table (optional)
 
-没配模型密钥也能玩，本地演示引擎会稳稳接班；配置后，服务端会请 DeepSeek 上桌，让对手回复和分析更自然、更不按台词本出牌。
+The application works without a model key: the local demo engine takes over. Once configured, the server invites DeepSeek to the table so counterpart replies and analysis are more natural and less dependent on a fixed script.
 
-### 环境变量
+### Environment variables
 
-| 变量 | 默认值 | 含义 |
+| Variable | Default | Meaning |
 | --- | --- | --- |
-| `DEEPSEEK_API_KEY` | 无 | DeepSeek 的 API Key（应用程序接口密钥），只允许保存在服务端 |
-| `DEEPSEEK_MODEL` | `deepseek-v4-pro` | 项目默认传递的模型标识；实际可用型号取决于 API 账户与服务配置，可自行覆盖 |
-| `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek 接口基础地址 |
-| `DEEPSEEK_DISABLE_KEYCHAIN` | 未设置 | 设为 `1` 时，禁止在 macOS 钥匙串中查找密钥 |
-| `STF_HOST` | `127.0.0.1` | Python 服务监听地址 |
-| `STF_PORT` | `4173` | Python 服务监听端口 |
+| `DEEPSEEK_API_KEY` | None | DeepSeek API key; it must remain on the server |
+| `DEEPSEEK_MODEL` | `deepseek-v4-pro` | Model identifier passed by default; actual availability depends on the API account and service configuration and can be overridden |
+| `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | DeepSeek API base URL |
+| `DEEPSEEK_DISABLE_KEYCHAIN` | Unset | Set to `1` to disable macOS Keychain lookup |
+| `STF_HOST` | `127.0.0.1` | Address on which the Python service listens |
+| `STF_PORT` | `4173` | Port on which the Python service listens |
 
-macOS 临时配置：
+Temporary macOS configuration:
 
 ```bash
-export DEEPSEEK_API_KEY="替换为你自己的 Key"
+export DEEPSEEK_API_KEY="REPLACE_WITH_YOUR_OWN_KEY"
 export DEEPSEEK_MODEL="deepseek-v4-pro"
 python3 server.py
 ```
 
-macOS 钥匙串配置：
+macOS Keychain configuration:
 
 ```bash
 security add-generic-password \
   -U \
   -a "stf-demo" \
   -s "stf-deepseek-api-key" \
-  -w "替换为你自己的 Key"
+  -w "REPLACE_WITH_YOUR_OWN_KEY"
 ```
 
-密钥读取顺序为：环境变量 → macOS 钥匙串 → 本地演示引擎。API Key 不会出现在前端文件或 `/api/config` 响应中，也不应提交到 GitHub。
+The key lookup order is: environment variable → macOS Keychain → local demo engine. The API key is never included in frontend files or the `/api/config` response, and it must not be committed to GitHub.
 
-## 接口暗号
+## API endpoints
 
-| 方法与路径 | 用途 | 返回方式 |
+| Method and path | Purpose | Response |
 | --- | --- | --- |
-| `GET /api/health` | 服务健康检查 | JSON |
-| `GET /api/config` | 返回前端可公开的引擎状态 | JSON，不包含密钥 |
-| `POST /api/respond` | 连续职场对话、公开分析和下一句建议 | NDJSON 流 |
-| `POST /api/mystic-profile` | 根据输入资料排盘并生成沟通画像 | JSON |
-| `POST /api/live-analysis` | 根据新增聊天加深当前画像 | JSON |
+| `GET /api/health` | Service health check | JSON |
+| `GET /api/config` | Return publicly safe frontend engine status | JSON, without secrets |
+| `POST /api/respond` | Continuous workplace dialogue, evidence-based analysis, and next-message suggestion | NDJSON stream |
+| `POST /api/mystic-profile` | Calculate a chart from the provided details and generate a communication profile | JSON |
+| `POST /api/live-analysis` | Refine the current profile using newly added chat messages | JSON |
 
-## 八字怎么算：不是让 AI 现场编
+## How Bazi is calculated—it is not improvised live by AI
 
-玄学分析图真实加载 [`jinchenma94/bazi-skill`](https://github.com/jinchenma94/bazi-skill) 的运行时规则。当前固化版本为提交 `bdd7f863d4450bf0e2fac84579ad6b45cfdfa25c`：`SKILL.md` 与 `wuxing-tables.md`、`shichen-table.md`、`dayun-rules.md`、`classical-texts.md` 四份参考文件都会在服务启动时读取并做完整性校验。
+The mystic analysis chart loads the runtime rules from [`jinchenma94/bazi-skill`](https://github.com/jinchenma94/bazi-skill). The currently pinned version is commit `bdd7f863d4450bf0e2fac84579ad6b45cfdfa25c`. At service startup, `SKILL.md` and the four reference files—`wuxing-tables.md`, `shichen-table.md`, `dayun-rules.md`, and `classical-texts.md`—are loaded and integrity-checked.
 
-职责不是一锅炖：`lunar_python==1.4.8` 负责确定性历法排盘，Skill 负责结构化命理解读，DeepSeek 只把已经确定的结论翻译成办公室里能发的话。DeepSeek 不能覆盖日主、旺衰、格局、喜忌、大运或流年；发送给语言模型的对象信息也只保留姓名与在世状态，不包含原始生日、出生时刻或出生地点。
+Responsibilities are deliberately separated. `lunar_python==1.4.8` performs deterministic calendar and chart computation. The Skill supplies structured interpretation under the traditional Bazi framework. DeepSeek only translates already established conclusions into wording that can be used in a workplace message. DeepSeek cannot override the Day Master, strength assessment, pattern classification, favorable or unfavorable elements, Luck Pillars, or annual cycles. Information about the other person sent to the language model is limited to their name and whether they are living; raw birth date, birth time, and birthplace are excluded.
 
-这里实现的是 **Skill 的职场沟通适配子集**：保留四柱、旺衰、格局、喜忌、调候、大运、流年与历史校准，但不扩写婚姻、健康、财富吉凶等与 Demo 无关的断语。没实现的范围会明确留白，不让 AI 自己补一段“天机”。
+This implementation is a **workplace-communication subset of the Skill**. It retains Four Pillars, strength assessment, pattern classification, favorable and unfavorable elements, climate balancing, Luck Pillars, annual cycles, and historical calibration, but does not expand into claims about marriage, health, wealth, fortune, or misfortune that are unrelated to the demo. Unimplemented areas remain explicitly blank instead of inviting AI to invent “heavenly secrets.”
 
-- 四柱：年柱、月柱、日柱、时柱四组干支。
-- 日主：日柱天干，页面会将其作为命盘分析中心格外突出。
-- 十神：其他干支相对日干的生克关系名称。
-- 藏干：传统命理中每个地支内部所含的天干。
-- 大运：传统命理中按十年分段的运程序列。
+- **Four Pillars (四柱, Sì Zhù):** four pairs of Heavenly Stems and Earthly Branches representing the year, month, day, and hour.
+- **Day Master (日主, Rì Zhǔ):** the Heavenly Stem of the Day Pillar; the interface highlights it as the center of chart interpretation.
+- **Ten Gods (十神, Shí Shén):** traditional relationship categories derived from how the other stems and branches interact with the Day Stem.
+- **Hidden Stems (藏干, Cáng Gān):** Heavenly Stems traditionally considered to be contained within each Earthly Branch.
+- **Luck Pillars (大运, Dà Yùn):** a traditional sequence of ten-year life-cycle periods.
 
-农历输入会先转换为对应公历时刻，再按照节气边界计算年柱和月柱；23:00–24:00 按 Skill 的晚子时口径归入次日日柱。换句话说，罗盘可以很玄，日期不能乱算。命理解释属于传统文化娱乐内容，不代表科学结论。
+A lunar-calendar input is first converted to its corresponding Gregorian date and time. The Year and Month Pillars are then calculated against solar-term boundaries. Following the Skill's convention, 23:00–24:00 is treated as the late Zi hour and assigned to the next day's Day Pillar. The compass may look mystical; the dates cannot be arbitrary. All metaphysical interpretation is traditional-cultural entertainment, not a scientific conclusion.
 
-## 今日耐心余额：68 分，不多但能撑
+## Today's patience balance: 68—not much, but enough
 
-当天首次进入为 68 点——毕竟满电上班不符合世界观。每轮对话由服务端根据场景、表达方式和外挂状态返回可解释的变化：友善协作可能回血，高压或阴阳沟通会消耗，清晰边界和外挂建议会减少损耗，成功回溯返还 4 点“后悔税”。
+The balance starts at 68 on the first visit of the day, because arriving at work fully charged would break the setting. After each turn, the server returns an explainable change based on the scenario, wording, and power-up state. Constructive collaboration may restore points; pressure or passive aggression drains them; clear boundaries and power-up guidance reduce the loss; a successful Rewind refunds 4 points of “regret tax.”
 
-余额和最多 20 条流水保存在浏览器 `localStorage`（本地存储）中，刷新后仍保留，日期变化后自动重置。点击顶部余额卡可以查看或手动重置当天明细。
+The balance and up to 20 ledger entries are stored in browser `localStorage`. They survive a refresh and reset automatically when the date changes. Click the balance card at the top to inspect or manually reset today's entries.
 
-## 命理可以娱乐，测试不能随缘
+## Metaphysics can be entertainment; testing cannot be left to chance
 
-按钮会亮只是第一关。测试还会检查连续对话是否真的记得前文、农历是否能够排盘、移动端有没有横向溢出、聊天区是否只在内部滚动，以及日主有没有被正确定位和突出显示。
+A button lighting up is only the first checkpoint. Tests also verify that continuous dialogue truly remembers previous turns, lunar dates can produce a chart, mobile layouts do not overflow horizontally, chat scrolls only inside its own area, and the Day Master is correctly located and highlighted.
 
-运行 Python 单元测试与接口测试：
+Run Python unit and API tests:
 
 ```bash
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-浏览器测试需要在当前 Node.js 环境中安装 Playwright（浏览器自动化测试库）及 Chromium：
+Browser tests require Playwright, a browser-automation library, and Chromium in the current Node.js environment:
 
 ```bash
 npm install --no-save --package-lock=false playwright
@@ -207,66 +211,66 @@ node tests/verify_ui.cjs
 node tests/verify_roadshow.cjs
 ```
 
-使用其他地址进行验收：
+To run acceptance tests against another address:
 
 ```bash
 DEMO_URL=http://127.0.0.1:4173/ node tests/verify_mobile.cjs
 ```
 
-## 5 分钟路演：老板的茶还没凉
+## 5-minute roadshow—the boss's tea is still warm
 
-`roadshow.html` 共 8 页，建议时长合计刚好 300 秒。讲完产品，老板的茶大概率还热着。快捷键如下：
+`roadshow.html` contains eight slides with a recommended total duration of exactly 300 seconds. By the time the product story is done, the boss's tea will probably still be warm. Keyboard shortcuts:
 
-- `←` / `→` 或空格：切换页面。
-- `N`：显示或隐藏逐页演讲提示。
-- `F`：进入或退出浏览器全屏。
-- `A`：开启或关闭按建议时长自动翻页。
-- `R`：返回第一页并重新开始计时。
+- `←` / `→` or Space: move between slides.
+- `N`: show or hide speaker notes for each slide.
+- `F`: enter or exit browser fullscreen.
+- `A`: enable or disable automatic slide advancement using the recommended timing.
+- `R`: return to the first slide and restart the timer.
 
-## 项目结构：案发现场
+## Project structure—the scene of the incident
 
 ```text
 stf/
-├── index.html                  # 产品页面语义结构
-├── styles.css                 # 主界面、玄学空间与响应式视觉
-├── script.js                  # 场景、聊天、外挂、排盘和回溯交互
-├── server.py                  # 静态服务、流式 API、排盘和模型代理
-├── roadshow.html              # 5 分钟路演页面
+├── index.html                  # Product-page semantic structure
+├── styles.css                 # Main UI, mystic space, and responsive visuals
+├── script.js                  # Scenarios, chat, power-ups, chart, and rewind interactions
+├── server.py                  # Static server, streaming API, chart computation, and model proxy
+├── roadshow.html              # 5-minute roadshow page
 ├── roadshow.css
 ├── roadshow.js
-├── requirements.txt           # Python 依赖
-├── prompts/                   # 职场对话系统提示词
-├── vendor/bazi-skill/         # 固化并校验的 Skill 契约与 4 份规则参考
-├── deploy/                    # systemd 与 Nginx 部署配置
-├── tests/                     # 单元、接口和浏览器验收测试
-└── assets/                    # 设计参考资源
+├── requirements.txt           # Python dependencies
+├── prompts/                   # System prompts for workplace conversations
+├── vendor/bazi-skill/         # Pinned, integrity-checked Skill contract and 4 rule references
+├── deploy/                    # systemd and Nginx deployment configuration
+├── tests/                     # Unit, API, and browser acceptance tests
+└── assets/                    # Design reference assets
 ```
 
-## 上服务器：让它 24 小时替你值班
+## Production deployment—let it cover the 24-hour shift
 
-生产演示使用 Nginx + systemd：Nginx 是反向代理，负责把 `/stf/` 请求转发到只监听本机的 Python 服务；systemd 是 Linux 服务管理器，负责开机启动、异常重启和日志收集。
+The production demo uses Nginx and systemd. Nginx is a reverse proxy that forwards `/stf/` requests to the Python service, which listens only on the local machine. systemd is a Linux service manager that handles startup, crash recovery, and log collection.
 
-说人话就是：
+In plain language:
 
-- **Nginx：**门口前台，把 `/stf/` 请求领到正确工位。
-- **Python 服务：**真正负责聊天、流式输出和排盘的打工人。
-- **systemd：**值班经理，服务一旦躺平，就负责把它重新叫醒。
+- **Nginx:** the front desk, directing each `/stf/` request to the correct workstation.
+- **Python service:** the person doing the actual work of chat, streaming output, and chart computation.
+- **systemd:** the duty manager, waking the service back up if it falls asleep.
 
-仓库提供：
+The repository includes:
 
-- `deploy/stf.service`：后台服务定义，默认从 `/srv/stf` 启动。
-- `deploy/nginx-stf-location.conf`：Nginx 的 `/stf/` 路由片段。
+- `deploy/stf.service`: background service definition, configured to start from `/srv/stf` by default.
+- `deploy/nginx-stf-location.conf`: Nginx routing snippet for `/stf/`.
 
-服务端环境文件建议放在 `/etc/stf/stf.env`，权限设置为 `600`：
+The server environment file should be stored at `/etc/stf/stf.env` with permissions set to `600`:
 
 ```text
 STF_HOST=127.0.0.1
 STF_PORT=4173
 DEEPSEEK_MODEL=deepseek-v4-pro
-DEEPSEEK_API_KEY=由服务器安全注入，禁止提交到 GitHub
+DEEPSEEK_API_KEY=INJECT_SECURELY_ON_THE_SERVER_DO_NOT_COMMIT_TO_GITHUB
 ```
 
-部署后验证：
+Verify after deployment:
 
 ```bash
 systemctl status stf.service
@@ -274,16 +278,16 @@ curl http://127.0.0.1:4173/api/health
 curl http://127.0.0.1/stf/api/health
 ```
 
-## 爽归爽，边界必须守住
+## Keep the fun, enforce the boundaries
 
-- 八字信息只作为娱乐化角色设定，不用于判断真实人格、招聘、绩效或重大关系决策。
-- 配置 DeepSeek 后，聊天内容、对象称呼和去标识化命盘结构会发送给所配置的模型服务；原始出生日期、时刻和地点只在应用后端用于排盘，发给模型前会被剥离。即便如此，使用真实资料前仍应取得授权，并避免输入公司秘密、身份证号、联系方式等敏感信息。
-- “回怼”被约束为明确边界、锁定事实和推动工作，不生成侮辱、威胁或职场霸凌内容。
-- 回溯只改变当前 Demo 的浏览器状态，不能撤回微信、飞书等真实聊天软件里的消息。
-- 模型不可用时会自动使用本地演示结果，但不会伪造历法排盘数据。
-- 三个场景的聊天历史只保存在当前页面会话中，刷新页面后会清空；只有“今日耐心余额”会写入浏览器本地存储。
-- 当前公网配置是产品 Demo，没有内置账号登录、接口鉴权或请求限流。正式对外服务前，应在反向代理或应用层补充 HTTPS、身份认证、调用频率限制和模型额度保护。
+- Bazi information is used only as entertainment-oriented character context. It must not be used to judge real personality or make hiring, performance, or consequential relationship decisions.
+- When DeepSeek is configured, chat content, the counterpart's display name, and a de-identified chart structure are sent to the configured model service. Raw birth date, birth time, and birthplace are used only by the application backend for chart computation and are removed before model submission. Even with these safeguards, obtain authorization before using real information and do not enter company secrets, national identification numbers, contact details, or other sensitive data.
+- “Pushing back” is constrained to establishing clear boundaries, locking down facts, and moving work forward. The system does not generate insults, threats, or workplace bullying.
+- Rewind changes only the current browser state in this demo. It cannot retract messages from WeChat, Feishu/Lark, or another real messaging application.
+- When the model is unavailable, the application automatically uses local demo results, but it never fabricates calendar calculations.
+- Conversation histories for the three scenarios remain only in the current page session and are cleared on refresh. Only Today's Patience Balance is written to browser local storage.
+- The current public deployment is a product demo without built-in account login, API authentication, or request rate limiting. Before exposing it as a production service, add HTTPS, identity authentication, rate limits, and model-quota protections at the reverse-proxy or application layer.
 
-## 开源状态
+## License
 
-当前仓库尚未声明开源许可证。未经仓库所有者明确授权，请勿将代码视为可自由复制、修改或商用的开源项目。
+This project is open source under the [MIT License](LICENSE). Third-party content under `vendor/bazi-skill/` retains its original MIT license and copyright notice.
